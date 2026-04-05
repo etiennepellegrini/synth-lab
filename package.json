@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Interactive synthesizer and synthesis fundamentals course",
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
