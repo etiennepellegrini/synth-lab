@@ -1,0 +1,283 @@
+/* ================== Course-Specific Styles ==================== */
+
+.chapter-content p {
+  color: var(--text-2);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  max-width: 640px;
+}
+
+.chapter-content p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* --- Visualization Container --- */
+
+.viz-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.viz-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
+}
+
+/* --- Volca Callout --- */
+
+.volca-callout {
+  border: 1px solid var(--amber-dim);
+  border-left: 3px solid var(--amber);
+  background: linear-gradient(135deg, #f5a62308, transparent);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 24px 0;
+  max-width: 640px;
+}
+
+.volca-callout-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.volca-callout p {
+  color: var(--text-2);
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+
+.volca-callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Dive Deeper --- */
+
+.dive-deeper {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 28px 0;
+  overflow: hidden;
+  max-width: 680px;
+}
+
+.dive-deeper-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: none;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.dive-deeper-toggle:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.dive-deeper-toggle .arrow {
+  transition: transform 0.25s;
+  display: inline-block;
+  font-size: 0.7rem;
+}
+
+.dive-deeper-toggle .arrow.open {
+  transform: rotate(90deg);
+}
+
+.dive-deeper-body {
+  padding: 0 20px 20px;
+  background: var(--surface);
+}
+
+.dive-deeper-body p {
+  color: var(--text-2);
+  font-size: 0.88rem;
+  margin-bottom: 0.85rem;
+  max-width: 620px;
+  line-height: 1.75;
+}
+
+.dive-deeper-body p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dive-deeper-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Slider --- */
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-group label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.slider-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+}
+
+.slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--amber-dim);
+}
+
+/* --- Buttons --- */
+
+.wave-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wave-btn:hover {
+  border-color: var(--text-3);
+  color: var(--text);
+}
+
+.wave-btn.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: var(--cyan-dim);
+}
+
+.nav-btn {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn:hover {
+  border-color: var(--text-3);
+  color: var(--text);
+}
+
+.nav-btn.active {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-dim);
+  box-shadow: 0 0 12px var(--amber-dim);
+}
+
+.audio-btn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.audio-on {
+  background: var(--green)20;
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.audio-off {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-3);
+}
+
+.listen-btn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.listen-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.listen-btn.on {
+  background: var(--green)20;
+  border-color: var(--green);
+  color: var(--green);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px var(--green)30;
+  }
+  50% {
+    box-shadow: 0 0 12px var(--green)50;
+  }
+}
+
+/* --- SVG Text Styling --- */
+
+svg text {
+  font-family: var(--font-mono);
+}
