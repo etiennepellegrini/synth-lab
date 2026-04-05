@@ -32,20 +32,28 @@ export function stopOscilloscopeLoop() {
 
 /**
  * Find zero-crossing trigger point for stable waveform display
+ * Uses improved algorithm with slope verification and lookahead
  * @param {Uint8Array} data - Time domain data
  * @returns {number} Index of trigger point, or 0 if not found
  */
 function findTriggerPoint(data) {
   const midpoint = 128;
-  const threshold = 2; // Hysteresis threshold
+  const threshold = 4; // Increased threshold for better noise immunity
 
-  // Look for upward zero crossing (going from below to above midpoint)
-  for (let i = 1; i < data.length / 2; i++) {
-    if (
-      data[i - 1] < midpoint - threshold &&
-      data[i] >= midpoint + threshold
-    ) {
-      return i;
+  // Look for upward zero crossing with positive slope confirmation
+  for (let i = 2; i < data.length / 2; i++) {
+    // Check that we're crossing the midpoint upward
+    const crossingUp = data[i - 1] < midpoint && data[i] >= midpoint;
+
+    if (crossingUp) {
+      // Verify positive slope by checking previous and next samples
+      const slope = data[i] - data[i - 2];
+      const lookahead = i + 2 < data.length ? data[i + 2] - data[i] : 0;
+
+      // Confirm rising edge: slope is positive and continues rising
+      if (slope > threshold && lookahead >= 0) {
+        return i;
+      }
     }
   }
 
@@ -168,16 +176,19 @@ export function renderOscilloscope(now = performance.now()) {
     lfoPhase = lfoPhase % 1;
     lastFrameTime = now;
 
-    // Draw LFO waveform in amber color
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    const lfoPoints = 200; // Number of points to draw
+    // Draw stationary LFO waveform (2 complete cycles)
+    const lfoCycles = 2;
+    const lfoPoints = 400; // 200 points per cycle for smooth curves
     const lfoSliceWidth = width / lfoPoints;
 
+    // Draw LFO waveform glow first (behind main line)
+    ctx.strokeStyle = '#f59e0b30';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+
     for (let i = 0; i < lfoPoints; i++) {
-      const phase = (lfoPhase + i / lfoPoints) % 1;
+      // Map to phase 0-1 across the display width (2 cycles)
+      const phase = (i / lfoPoints) * lfoCycles;
       const value = generateLFOValue(phase, synthState.lfoWave);
 
       // Scale LFO to fit in the display (use 30% of height)
@@ -193,13 +204,13 @@ export function renderOscilloscope(now = performance.now()) {
 
     ctx.stroke();
 
-    // Draw LFO glow
-    ctx.strokeStyle = '#f59e0b30';
-    ctx.lineWidth = 5;
+    // Draw LFO waveform main line
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
     ctx.beginPath();
 
     for (let i = 0; i < lfoPoints; i++) {
-      const phase = (lfoPhase + i / lfoPoints) % 1;
+      const phase = (i / lfoPoints) * lfoCycles;
       const value = generateLFOValue(phase, synthState.lfoWave);
 
       const lfoX = i * lfoSliceWidth;
@@ -213,6 +224,23 @@ export function renderOscilloscope(now = performance.now()) {
     }
 
     ctx.stroke();
+
+    // Draw position indicator dot
+    // Map current LFO phase to x position on the fixed waveform
+    const dotX = (lfoPhase / lfoCycles) * width;
+    const dotValue = generateLFOValue(lfoPhase, synthState.lfoWave);
+    const dotY = height / 2 - (dotValue * height * 0.15);
+
+    // Draw dot with glow
+    ctx.fillStyle = '#f59e0b80';
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 8, 0, 2 * Math.PI);
+    ctx.fill();
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 5, 0, 2 * Math.PI);
+    ctx.fill();
 
     // Draw LFO label
     ctx.fillStyle = '#f59e0b';
