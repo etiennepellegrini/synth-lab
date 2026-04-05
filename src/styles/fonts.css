@@ -1,0 +1,38 @@
+/* ======================================================================
+   Font Imports
+   Google Fonts CDN (will be cached by service worker)
+   ====================================================================== */
+
+/*
+ * Outfit: 300, 400, 500, 600, 700
+ * Used for: Body text, headings, UI labels
+ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/*
+ * Source Code Pro: 400, 600, 700
+ * Used for: Code, monospace labels, technical UI
+ */
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
+
+/*
+ * TODO (Optional): For true offline support, download woff2 files and replace
+ * with local @font-face declarations. Current setup relies on service worker
+ * caching of Google Fonts CDN responses.
+ *
+ * To vendor locally:
+ * 1. Download fonts from Google Fonts
+ * 2. Extract woff2 files
+ * 3. Save to src/styles/fonts/
+ * 4. Replace @import statements above with @font-face declarations
+ *
+ * Example @font-face:
+ *
+ * @font-face {
+ *   font-family: 'Outfit';
+ *   font-style: normal;
+ *   font-weight: 400;
+ *   font-display: swap;
+ *   src: url('./fonts/outfit-regular.woff2') format('woff2');
+ * }
+ */

@@ -1,0 +1,112 @@
+/* ======================================================================
+   CSS Custom Properties (Design Tokens)
+   Shared across all applications
+   ====================================================================== */
+
+:root {
+  /* --- Colors --- */
+  --bg: #08080d;
+  --surface: #111118;
+  --surface-2: #1a1a24;
+  --surface-3: #242430;
+  --border: #2e2e3d;
+
+  --text: #eeeef2;
+  --text-2: #9999b0;
+  --text-3: #66667a;
+
+  --amber: #f5a623;
+  --amber-dim: #f5a62340;
+  --cyan: #22d3ee;
+  --cyan-dim: #22d3ee30;
+  --red: #f06050;
+  --green: #34d399;
+  --purple: #a78bfa;
+
+  /* --- Typography --- */
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'Source Code Pro', monospace;
+
+  /* --- Spacing --- */
+  --container-max: 720px;
+  --module-gap: 8px;
+  --touch-target-min: 44px;
+
+  /* --- Transitions --- */
+  --transition-fast: 0.12s;
+  --transition-normal: 0.2s;
+  --transition-slow: 0.3s;
+}
+
+/* --- Base Styles --- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Scrollbar Styling --- */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
+/* --- Accessibility --- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Touch/Mobile Optimizations --- */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Disable double-tap zoom */
+  * {
+    touch-action: manipulation;
+  }
+
+  /* Minimum touch target size */
+  button,
+  a,
+  input[type="range"],
+  .touchable {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synth Lab — Home</title>
+  <link rel="stylesheet" href="./styles/fonts.css" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      color: var(--amber);
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: var(--text-2);
+      margin-bottom: 2rem;
+    }
+
+    .links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    a {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      transition: all var(--transition-normal);
+    }
+
+    a:hover {
+      border-color: var(--cyan);
+      background: var(--cyan-dim);
+      color: var(--cyan);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SYNTH LAB</h1>
+    <p>Interactive synthesizer and synthesis fundamentals course</p>
+    <div class="links">
+      <a href="./synth.html">Synthesizer</a>
+      <a href="./course.html">Course</a>
+    </div>
+  </div>
+</body>
+</html>
