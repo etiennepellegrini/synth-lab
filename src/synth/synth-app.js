@@ -211,9 +211,12 @@ export function setOscWave(type) {
 export function setDetune(value) {
   state.oscDetune = Number(value);
   if (voice) voice.setDetune(Number(value));
-  // Update value display only (find the detune value span)
-  const detuneSpan = document.querySelector('.knob-group:has(input[min="-100"]) .knob-value');
-  if (detuneSpan) detuneSpan.textContent = `${state.oscDetune}¢`;
+  // Update value display only (now an input element)
+  const detuneInput = document.querySelector('.knob-group:has(input[min="-100"]) input.knob-value');
+  if (detuneInput) {
+    detuneInput.value = `${state.oscDetune}¢`;
+    detuneInput.dataset.raw = state.oscDetune;
+  }
 }
 
 export function toggleOscModule() {
@@ -240,9 +243,12 @@ export function setFilterCutoff(value) {
 export function setFilterRes(value) {
   state.filterRes = Number(value);
   if (voice) voice.setFilterResonance(Number(value));
-  // Update display
-  const resSpan = document.querySelector('.knob-group:has(input[max="25"]) .knob-value');
-  if (resSpan) resSpan.textContent = Number(state.filterRes).toFixed(1);
+  // Update display (now an input element)
+  const resInput = document.querySelector('.knob-group:has(input[max="25"]) input.knob-value');
+  if (resInput) {
+    resInput.value = Number(state.filterRes).toFixed(1);
+    resInput.dataset.raw = state.filterRes;
+  }
 }
 
 // Logarithmic filter cutoff slider
@@ -309,13 +315,16 @@ export function toggleEnv() {
 export function setEnvAttack(value) {
   state.envA = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Attack') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = formatTime(state.envA);
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = formatTime(state.envA);
+        valueInput.dataset.raw = state.envA;
+      }
     }
   });
 }
@@ -323,13 +332,16 @@ export function setEnvAttack(value) {
 export function setEnvDecay(value) {
   state.envD = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Decay') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = formatTime(state.envD);
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = formatTime(state.envD);
+        valueInput.dataset.raw = state.envD;
+      }
     }
   });
 }
@@ -337,13 +349,16 @@ export function setEnvDecay(value) {
 export function setEnvSustain(value) {
   state.envS = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Sustain') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${Math.round(state.envS * 100)}%`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${Math.round(state.envS * 100)}%`;
+        valueInput.dataset.raw = state.envS;
+      }
     }
   });
 }
@@ -351,13 +366,16 @@ export function setEnvSustain(value) {
 export function setEnvRelease(value) {
   state.envR = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Release') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = formatTime(state.envR);
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = formatTime(state.envR);
+        valueInput.dataset.raw = state.envR;
+      }
     }
   });
 }
@@ -384,13 +402,16 @@ export function setLfoWave(type) {
 export function setLfoRate(value) {
   state.lfoRate = parseFloat(value);
   if (voice) voice.setLFORate(parseFloat(value));
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Rate') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${Number(state.lfoRate).toFixed(1)} Hz`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${Number(state.lfoRate).toFixed(1)} Hz`;
+        valueInput.dataset.raw = state.lfoRate;
+      }
     }
   });
 }
@@ -398,13 +419,16 @@ export function setLfoRate(value) {
 export function setLfoDepth(value) {
   state.lfoDepth = parseFloat(value);
   if (voice) voice.setLFODepth(parseFloat(value));
-  // Update display
+  // Update display (now an input element)
   const knobs = document.querySelectorAll('.knob-group');
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Depth') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${state.lfoDepth}`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${state.lfoDepth}`;
+        valueInput.dataset.raw = state.lfoDepth;
+      }
     }
   });
 }
@@ -480,8 +504,11 @@ export function setDelayTime(value) {
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Time') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${(state.delayTime * 1000).toFixed(0)}ms`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${(state.delayTime * 1000).toFixed(0)}ms`;
+        valueInput.dataset.raw = state.delayTime;
+      }
     }
   });
 }
@@ -494,8 +521,11 @@ export function setDelayFB(value) {
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Feedback') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${Math.round(state.delayFB * 100)}%`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${Math.round(state.delayFB * 100)}%`;
+        valueInput.dataset.raw = state.delayFB;
+      }
     }
   });
 }
@@ -508,8 +538,11 @@ export function setDelayMix(value) {
   knobs.forEach((knob) => {
     const label = knob.querySelector('.knob-label');
     if (label && label.textContent === 'Mix') {
-      const valueSpan = knob.querySelector('.knob-value');
-      if (valueSpan) valueSpan.textContent = `${Math.round(state.delayMix * 100)}%`;
+      const valueInput = knob.querySelector('input.knob-value');
+      if (valueInput) {
+        valueInput.value = `${Math.round(state.delayMix * 100)}%`;
+        valueInput.dataset.raw = state.delayMix;
+      }
     }
   });
 }
