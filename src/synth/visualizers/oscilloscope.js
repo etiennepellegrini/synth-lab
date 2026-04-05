@@ -15,7 +15,7 @@ export function startOscilloscopeLoop() {
 
   function draw(now) {
     renderOscilloscope(now);
-    renderSpectrum(); // Also render spectrum in same loop
+    renderSpectrum(now); // Also render spectrum in same loop
     renderEnvelopeViz(); // And envelope visualization
     animationFrameId = requestAnimationFrame(draw);
   }
@@ -32,32 +32,32 @@ export function stopOscilloscopeLoop() {
 
 /**
  * Find zero-crossing trigger point for stable waveform display
- * Uses improved algorithm with slope verification and lookahead
+ * Looks for crossing closest to target position for consistency
  * @param {Uint8Array} data - Time domain data
- * @returns {number} Index of trigger point, or 0 if not found
+ * @returns {number} Index of trigger point
  */
 function findTriggerPoint(data) {
   const midpoint = 128;
-  const threshold = 4; // Increased threshold for better noise immunity
+  const targetPos = Math.floor(data.length * 0.25); // Target position: 1/4 through buffer
 
-  // Look for upward zero crossing with positive slope confirmation
-  for (let i = 2; i < data.length / 2; i++) {
-    // Check that we're crossing the midpoint upward
-    const crossingUp = data[i - 1] < midpoint && data[i] >= midpoint;
+  let bestTrigger = 0;
+  let bestDistance = Infinity;
 
-    if (crossingUp) {
-      // Verify positive slope by checking previous and next samples
-      const slope = data[i] - data[i - 2];
-      const lookahead = i + 2 < data.length ? data[i + 2] - data[i] : 0;
+  // Look for upward zero crossings near target position
+  for (let i = 1; i < data.length / 2; i++) {
+    // Simple upward crossing: previous sample below midpoint, current at or above
+    if (data[i - 1] < midpoint && data[i] >= midpoint) {
+      const distance = Math.abs(i - targetPos);
 
-      // Confirm rising edge: slope is positive and continues rising
-      if (slope > threshold && lookahead >= 0) {
-        return i;
+      // Keep the crossing closest to target position
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestTrigger = i;
       }
     }
   }
 
-  return 0; // No trigger found, start at beginning
+  return bestTrigger;
 }
 
 /**
@@ -165,20 +165,24 @@ export function renderOscilloscope(now = performance.now()) {
 
   ctx.stroke();
 
-  // --- Draw LFO waveform overlay (if LFO is enabled) ---
+  // --- Draw LFO waveform overlay (if LFO is enabled and targets pitch/amplitude) ---
 
   // Access state from synth-app.js
   const synthState = window.synthState;
-  if (synthState && synthState.lfoOn) {
+  if (
+    synthState &&
+    synthState.lfoOn &&
+    (synthState.lfoTarget === 'pitch' || synthState.lfoTarget === 'amplitude')
+  ) {
     // Update LFO phase based on time
     const dt = (now - lastFrameTime) / 1000;
     lfoPhase += dt * synthState.lfoRate;
     lfoPhase = lfoPhase % 1;
     lastFrameTime = now;
 
-    // Draw stationary LFO waveform (2 complete cycles)
-    const lfoCycles = 2;
-    const lfoPoints = 400; // 200 points per cycle for smooth curves
+    // Draw stationary LFO waveform (1 complete cycle across full width)
+    const lfoCycles = 1;
+    const lfoPoints = 200; // Points for smooth curve
     const lfoSliceWidth = width / lfoPoints;
 
     // Draw LFO waveform glow first (behind main line)
@@ -226,9 +230,11 @@ export function renderOscilloscope(now = performance.now()) {
     ctx.stroke();
 
     // Draw position indicator dot
-    // Map current LFO phase to x position on the fixed waveform
-    const dotX = (lfoPhase / lfoCycles) * width;
-    const dotValue = generateLFOValue(lfoPhase, synthState.lfoWave);
+    // Map current LFO phase (0-1) to x position across full width
+    // Since we show 2 cycles, we need to map the phase within those 2 cycles
+    const phaseInDisplay = lfoPhase % 1; // Ensure 0-1 range
+    const dotX = phaseInDisplay * width;
+    const dotValue = generateLFOValue(phaseInDisplay, synthState.lfoWave);
     const dotY = height / 2 - (dotValue * height * 0.15);
 
     // Draw dot with glow
