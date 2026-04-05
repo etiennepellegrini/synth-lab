@@ -2,7 +2,7 @@
 
 Learn synthesis fundamentals with hands-on audio demos and a playable web synthesizer. Built specifically for the Korg Volca Keys but applicable to any subtractive synthesizer.
 
-**[Live Demo →](#)** *(Update with your GitHub Pages URL)*
+**[Live Demo →](https://etiennepellegrini.github.io/synth-lab/)**
 
 ---
 
@@ -47,8 +47,8 @@ Each chapter includes:
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/synth-course.git
-cd synth-course
+git clone https://github.com/etiennepellegrini/synth-lab.git
+cd synth-lab
 
 # Install dependencies
 pnpm install
@@ -88,7 +88,7 @@ Output in `dist/` directory.
 ### Project Structure
 
 ```
-synth-course/
+synth-lab/
 ├── src/
 │   ├── index.html                  # Landing page
 │   ├── synth.html                  # Synthesizer entry point
@@ -164,7 +164,7 @@ osc (per demo) → filter/gain → master → limiter → analyser
 1. Push to `main` branch — GitHub Actions auto-builds and deploys
 2. Enable GitHub Pages in repo settings:
    - Settings → Pages → Source: **GitHub Actions**
-3. Your site will be live at `https://YOUR_USERNAME.github.io/synth-course/`
+3. Your site will be live at `https://YOUR_USERNAME.github.io/synth-lab/`
 
 ### Manual Deployment
 
