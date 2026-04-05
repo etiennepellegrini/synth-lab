@@ -2,11 +2,14 @@
 // Envelope Visualization Module
 // ======================================================================
 
-import { state } from '../synth-app.js';
+import { state, getVoice } from '../synth-app.js';
 
-export function renderEnvelopeViz(voice) {
+export function renderEnvelopeViz() {
   const canvas = document.getElementById('envCanvas');
-  if (!canvas || !voice) return;
+  if (!canvas) return;
+
+  const voice = getVoice();
+  if (!voice) return;
 
   const ctx = canvas.getContext('2d');
   const width = canvas.width;

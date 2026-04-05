@@ -503,13 +503,8 @@ export function render() {
   // Re-initialize keyboard after render
   initKeyboard();
 
-  // Render visualizations
-  if (voice) {
-    renderEnvelopeViz(voice);
-  }
-  if (s.spectrumOpen) {
-    renderSpectrum();
-  }
+  // Visualizations are rendered in continuous loop by startOscilloscopeLoop()
+  // No need to call them here
 }
 
 // ======================================================================

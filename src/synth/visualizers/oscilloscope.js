@@ -3,6 +3,8 @@
 // ======================================================================
 
 import { audioEngine } from '../../lib/audio-engine.js';
+import { renderSpectrum } from './spectrum.js';
+import { renderEnvelopeViz } from '../modules/envelope.js';
 
 let animationFrameId = null;
 
@@ -11,6 +13,8 @@ export function startOscilloscopeLoop() {
 
   function draw() {
     renderOscilloscope();
+    renderSpectrum(); // Also render spectrum in same loop
+    renderEnvelopeViz(); // And envelope visualization
     animationFrameId = requestAnimationFrame(draw);
   }
 

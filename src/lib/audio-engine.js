@@ -305,6 +305,7 @@ export class Voice {
     this.delayWet.gain.value = 0;
     this.delayDry.gain.value = 1;
     this._delayEnabled = false;
+    this._delayMix = 0.3; // Store mix value
   }
 
   // ─── Envelope Processing (Frame-Based) ────────────────────────
@@ -327,11 +328,12 @@ export class Voice {
 
   _processEnvelope(dt) {
     if (!this._envEnabled) {
-      // No envelope: gate directly controls volume
+      // No envelope: gate directly controls volume with smooth fade
       if (this.gateOn) {
         this.envLevel = 1;
       } else {
-        this.envLevel = Math.max(0, this.envLevel - dt * 10);
+        // Smooth exponential-ish fade when gate is off
+        this.envLevel = Math.max(0, this.envLevel - (dt / 0.1) * this.envLevel);
       }
       this.ampGain.gain.value = this.envLevel * 0.35;
       this.envPhase = this.gateOn ? 'sustain' : (this.envLevel > 0.01 ? 'release' : 'idle');
@@ -478,7 +480,8 @@ export class Voice {
 
   setDelayEnabled(enabled) {
     this._delayEnabled = enabled;
-    this.delayWet.gain.value = enabled ? this.delayWet.gain.value : 0;
+    // Apply current mix value when enabling, or zero when disabling
+    this.delayWet.gain.value = enabled ? this._delayMix : 0;
   }
 
   setDelayTime(seconds) {
@@ -490,8 +493,10 @@ export class Voice {
   }
 
   setDelayMix(amount) {
+    this._delayMix = Math.max(0, Math.min(1, amount));
+    // Only apply to wet gain if delay is enabled
     if (this._delayEnabled) {
-      this.delayWet.gain.value = Math.max(0, Math.min(1, amount));
+      this.delayWet.gain.value = this._delayMix;
     }
   }
 
