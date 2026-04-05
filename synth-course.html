@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Synthesis Fundamentals — A Course for the Volca Keys</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #08080d; --surface: #111118; --surface-2: #1a1a24; --surface-3: #242430;
+    --border: #2e2e3d; --text: #eeeef2; --text-2: #9999b0; --text-3: #66667a;
+    --amber: #f5a623; --amber-dim: #f5a62340; --cyan: #22d3ee; --cyan-dim: #22d3ee30;
+    --red: #f06050; --green: #34d399;
+    --font-body: 'Outfit', sans-serif; --font-mono: 'Source Code Pro', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--surface-3); border-radius:3px; }
+  #root::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events:none; z-index:9999; }
+  .chapter-content p { color:var(--text-2); margin-bottom:1rem; font-size:0.95rem; max-width:640px; }
+  .chapter-content p strong { color:var(--text); font-weight:500; }
+  .viz-container { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin:24px 0; position:relative; overflow:hidden; }
+  .viz-container::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--amber-dim),transparent); }
+  .volca-callout { border:1px solid var(--amber-dim); border-left:3px solid var(--amber); background:linear-gradient(135deg,#f5a62308,transparent); border-radius:0 8px 8px 0; padding:16px 20px; margin:24px 0; max-width:640px; }
+  .volca-callout-title { font-family:var(--font-mono); font-size:0.75rem; font-weight:600; color:var(--amber); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+  .volca-callout p { color:var(--text-2); font-size:0.88rem; margin-bottom:0.5rem; }
+  .volca-callout p:last-child { margin-bottom:0; }
+  .dive-deeper { border:1px solid var(--border); border-radius:10px; margin:28px 0; overflow:hidden; max-width:680px; }
+  .dive-deeper-toggle { display:flex; align-items:center; gap:10px; width:100%; padding:14px 20px; background:var(--surface); border:none; color:var(--text-2); font-family:var(--font-mono); font-size:0.8rem; font-weight:600; letter-spacing:0.04em; cursor:pointer; transition:background 0.15s,color 0.15s; text-align:left; }
+  .dive-deeper-toggle:hover { background:var(--surface-2); color:var(--text); }
+  .dive-deeper-toggle .arrow { transition:transform 0.25s; display:inline-block; font-size:0.7rem; }
+  .dive-deeper-toggle .arrow.open { transform:rotate(90deg); }
+  .dive-deeper-body { padding:0 20px 20px; background:var(--surface); }
+  .dive-deeper-body p { color:var(--text-2); font-size:0.88rem; margin-bottom:0.85rem; max-width:620px; line-height:1.75; }
+  .dive-deeper-body p strong { color:var(--text); font-weight:500; }
+  .dive-deeper-body p:last-child { margin-bottom:0; }
+  .slider-group { display:flex; flex-direction:column; gap:4px; }
+  .slider-group label { font-family:var(--font-mono); font-size:0.72rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.08em; }
+  .slider-group input[type="range"] { -webkit-appearance:none; appearance:none; height:4px; background:var(--surface-3); border-radius:2px; outline:none; width:100%; }
+  .slider-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--amber); cursor:pointer; box-shadow:0 0 8px var(--amber-dim); }
+  .wave-btn { font-family:var(--font-mono); font-size:0.75rem; padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); cursor:pointer; transition:all 0.15s; }
+  .wave-btn:hover { border-color:var(--text-3); color:var(--text); }
+  .wave-btn.active { border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); }
+  .nav-btn { font-family:var(--font-mono); font-size:0.8rem; font-weight:600; width:36px; height:36px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-3); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; }
+  .nav-btn:hover { border-color:var(--text-3); color:var(--text); }
+  .nav-btn.active { border-color:var(--amber); color:var(--amber); background:var(--amber-dim); box-shadow:0 0 12px var(--amber-dim); }
+  .audio-btn { font-family:var(--font-mono); font-size:0.7rem; padding:5px 12px; border-radius:6px; border:1px solid var(--border); cursor:pointer; transition:all 0.15s; }
+  .audio-on { background:var(--green)20; border-color:var(--green); color:var(--green); }
+  .audio-off { background:var(--surface-2); border-color:var(--border); color:var(--text-3); }
+  .listen-btn { font-family:var(--font-mono); font-size:0.7rem; padding:4px 12px; border-radius:5px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-3); cursor:pointer; transition:all 0.15s; }
+  .listen-btn:hover { border-color:var(--green); color:var(--green); }
+  .listen-btn.on { background:var(--green)20; border-color:var(--green); color:var(--green); animation:pulse-glow 2s ease-in-out infinite; }
+  @keyframes pulse-glow { 0%,100% { box-shadow:0 0 4px var(--green)30; } 50% { box-shadow:0 0 12px var(--green)50; } }
+  svg text { font-family:var(--font-mono); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
+
+// ─── Web Audio Engine ───────────────────────────────────────────
+const AudioCtx = createContext(null);
+
+function AudioProvider({ children }) {
+  const [ready, setReady] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const ctxRef = useRef(null);
+  const masterRef = useRef(null);
+
+  const init = useCallback(() => {
+    if (ctxRef.current) { ctxRef.current.resume(); setReady(true); return; }
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const master = ctx.createGain();
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -6; limiter.knee.value = 12; limiter.ratio.value = 8;
+      master.gain.value = 0.25;
+      master.connect(limiter);
+      limiter.connect(ctx.destination);
+      ctxRef.current = ctx;
+      masterRef.current = master;
+      setReady(true);
+    } catch(e) { console.warn('Web Audio not available', e); }
+  }, []);
+
+  useEffect(() => {
+    if (masterRef.current) masterRef.current.gain.value = muted ? 0 : 0.25;
+  }, [muted]);
+
+  const value = useMemo(() => ({ ctx: ctxRef, master: masterRef, ready, init, muted, setMuted }), [ready, muted, init]);
+  return <AudioCtx.Provider value={value}>{children}</AudioCtx.Provider>;
+}
+
+function useAudio() { return useContext(AudioCtx); }
+
+// Helper: play a short blip (used for UI feedback)
+function playBlip(ctx, master, freq = 880, dur = 0.06) {
+  if (!ctx.current) return;
+  const o = ctx.current.createOscillator();
+  const g = ctx.current.createGain();
+  o.frequency.value = freq; o.type = 'sine';
+  g.gain.setValueAtTime(0.15, ctx.current.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.current.currentTime + dur);
+  o.connect(g); g.connect(master.current);
+  o.start(); o.stop(ctx.current.currentTime + dur + 0.01);
+}
+
+// Note frequencies for sequencer
+const NOTE_FREQS = { 'C': 261.63, 'D': 293.66, 'E': 329.63, 'F': 349.23, 'G': 392.0, 'A': 440.0, 'B': 493.88, "C'": 523.25 };
+
+// ─── Waveform Generation (visual) ───────────────────────────────
+function generateWaveform(type, numPoints=300, cycles=2) {
+  const pts = [];
+  for (let i=0;i<numPoints;i++) {
+    const t=(i/numPoints)*cycles, phase=t*Math.PI*2;
+    let y;
+    switch(type){case 'sine':y=Math.sin(phase);break;case 'saw':y=2*(t%1)-1;break;case 'square':y=(t%1)<0.5?1:-1;break;case 'triangle':y=4*Math.abs((t%1)-0.5)-1;break;default:y=0;}
+    pts.push({x:i/numPoints,y});
+  }
+  return pts;
+}
+function getHarmonics(type,count=16){const h=[];for(let n=1;n<=count;n++){let a;switch(type){case 'sine':a=n===1?1:0;break;case 'saw':a=1/n;break;case 'square':a=n%2===1?1/n:0;break;case 'triangle':a=n%2===1?1/(n*n):0;break;default:a=0;}h.push({n,amp:a});}return h;}
+function filterMagnitude(freq,cutoff,Q){const w=freq/cutoff;const d=Math.sqrt(Math.pow(1-w*w,2)+Math.pow(w/Q,2));return d>0?1/d:1;}
+function pointsToPath(pts,w,h,m=0){return pts.map((p,i)=>{const x=m+p.x*(w-2*m);const y=(h/2)-p.y*(h/2-m);return`${i===0?'M':'L'}${x},${y}`;}).join(' ');}
+
+// ─── Shared UI Components ───────────────────────────────────────
+function VolcaCallout({children}){return(<div className="volca-callout"><div className="volca-callout-title">⬡ On Your Volca Keys</div>{children}</div>);}
+function DiveDeeper({children}){const[open,setOpen]=useState(false);return(<div className="dive-deeper"><button className="dive-deeper-toggle" onClick={()=>setOpen(!open)}><span className={`arrow ${open?'open':''}`}>▶</span>Dive Deeper</button>{open&&<div className="dive-deeper-body">{children}</div>}</div>);}
+function Slider({label,value,onChange,min=0,max=100,step=1,suffix=''}){return(<div className="slider-group"><label>{label}: {typeof value==='number'?value.toFixed(step<1?1:0):value}{suffix}</label><input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(parseFloat(e.target.value))}/></div>);}
+function WaveformSVG({points,width=560,height=180,color='var(--cyan)',strokeWidth=2}){const path=pointsToPath(points,width,height,10);return(<svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:'block'}}><line x1="10" y1={height/2} x2={width-10} y2={height/2} stroke="var(--surface-3)" strokeWidth="1"/><line x1="10" y1="10" x2="10" y2={height-10} stroke="var(--surface-3)" strokeWidth="1" strokeDasharray="3,3"/><path d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinejoin="round"/></svg>);}
+
+function ListenToggle({ on, onToggle, label }) {
+  const audio = useAudio();
+  return (
+    <button className={`listen-btn ${on ? 'on' : ''}`} onClick={() => { if (!audio.ready) audio.init(); onToggle(!on); }}>
+      {on ? '🔊' : '🔇'} {label || (on ? 'Sound On' : 'Listen')}
+    </button>
+  );
+}
+
+// ─── Chapter 1: What Is Sound? ──────────────────────────────────
+function Chapter1() {
+  const audio = useAudio();
+  const [freq,setFreq]=useState(2);const [amp,setAmp]=useState(0.8);const [phase,setPhase]=useState(0);const animRef=useRef();
+  const [listening, setListening] = useState(false);
+  const oscRef = useRef(null); const gainRef = useRef(null);
+  const width=560,height=180;
+
+  useEffect(()=>{let r=true;const tick=()=>{if(!r)return;setPhase(p=>(p+0.02)%(Math.PI*20));animRef.current=requestAnimationFrame(tick);};animRef.current=requestAnimationFrame(tick);return()=>{r=false;cancelAnimationFrame(animRef.current);};},[]);
+
+  // Audio: sine wave
+  useEffect(() => {
+    if (listening && audio.ready && audio.ctx.current) {
+      const ctx = audio.ctx.current;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 220 * freq; // map visual freq to audible range
+      g.gain.value = amp * 0.3;
+      osc.connect(g); g.connect(audio.master.current);
+      osc.start();
+      oscRef.current = osc; gainRef.current = g;
+      return () => { g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05); setTimeout(() => { try{osc.stop();}catch(e){} }, 80); oscRef.current = null; };
+    }
+  }, [listening, audio.ready]);
+
+  // Update freq/amp in real time
+  useEffect(() => { if (oscRef.current) oscRef.current.frequency.value = 220 * freq; }, [freq]);
+  useEffect(() => { if (gainRef.current) gainRef.current.gain.value = amp * 0.3; }, [amp]);
+
+  useEffect(() => () => setListening(false), []); // cleanup on unmount
+
+  const points=useMemo(()=>{const pts=[];for(let i=0;i<300;i++){const x=i/300;pts.push({x,y:amp*Math.sin(x*Math.PI*2*freq+phase)});}return pts;},[freq,amp,phase]);
+  return (
+    <div className="chapter-content">
+      <p>Every sound you've ever heard — from the lowest bass drum to the highest flute trill — is <strong>air vibrating</strong>. When you blew into your flute, your breath set a column of air into rapid oscillation: compressing and decompressing hundreds of times per second. A synthesizer does the exact same thing, but with electricity instead of breath.</p>
+      <p>We visualize these vibrations as <strong>waveforms</strong>. The height of the wave is its <strong>amplitude</strong> (loudness). How many cycles it completes per second is its <strong>frequency</strong> (pitch), measured in Hertz (Hz). Concert A — the note orchestras tune to — vibrates at 440 Hz.</p>
+      <div className="viz-container">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <ListenToggle on={listening} onToggle={setListening} />
+          {listening && <span style={{fontFamily:'var(--font-mono)',fontSize:'0.65rem',color:'var(--text-3)'}}>~{(220*freq).toFixed(0)} Hz</span>}
+        </div>
+        <WaveformSVG points={points} width={width} height={height} color="var(--cyan)" strokeWidth={2.5} />
+        <div style={{display:'flex',gap:24,marginTop:16}}>
+          <Slider label="Frequency" value={freq} onChange={setFreq} min={0.5} max={6} step={0.1} suffix=" cycles"/>
+          <Slider label="Amplitude" value={amp} onChange={setAmp} min={0.1} max={1} step={0.05}/>
+        </div>
+        <p style={{color:'var(--text-3)',fontSize:'0.75rem',marginTop:12,marginBottom:0}}>↑ A moving sine wave. Toggle 🔊 to hear it. Drag sliders to change pitch and volume in real time.</p>
+      </div>
+      <p>Notice: more cycles in the same space = higher pitch. Taller waves = louder. This is the foundation of everything in synthesis.</p>
+      <VolcaCallout><p>The Volca Keys has 3 oscillators, each generating these kinds of vibrations electronically. The <strong>OCTAVE</strong> knob shifts the frequency range — just like moving between the registers on your flute.</p></VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Frequency and musical pitch have a logarithmic relationship.</strong> When you double a frequency, you go up exactly one octave. A₄ is 440 Hz, A₅ is 880 Hz, A₃ is 220 Hz. Our perception of pitch is proportional, not linear.</p>
+        <p><strong>Phase</strong> is where in its cycle a wave starts. Two identical waves at different phases can cancel or reinforce each other. When the Volca Keys stacks three oscillators in Unison mode, slight phase differences create that rich, fat sound.</p>
+        <p><strong>The harmonic series</strong> — when a string vibrates, it produces the fundamental AND integer multiples simultaneously. The relative strength of each harmonic gives an instrument its <strong>timbre</strong>. Synthesizers let you construct or sculpt that harmonic recipe directly.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 2: Oscillators & Waveforms ─────────────────────────
+function Chapter2() {
+  const audio = useAudio();
+  const [waveType,setWaveType]=useState('saw');
+  const [listening,setListening]=useState(false);
+  const oscRef=useRef(null); const gainRef=useRef(null);
+  const width=560,height=160;
+
+  // Audio: continuous tone with waveform type
+  useEffect(() => {
+    if (listening && audio.ready && audio.ctx.current) {
+      const ctx = audio.ctx.current;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = waveType === 'saw' ? 'sawtooth' : waveType;
+      osc.frequency.value = 220;
+      g.gain.value = 0.2;
+      osc.connect(g); g.connect(audio.master.current);
+      osc.start();
+      oscRef.current = osc; gainRef.current = g;
+      return () => { g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05); setTimeout(()=>{try{osc.stop();}catch(e){}},80); oscRef.current=null; };
+    }
+  }, [listening, audio.ready, waveType]);
+
+  useEffect(() => () => setListening(false), []);
+
+  const wavePoints=useMemo(()=>generateWaveform(waveType,300,2),[waveType]);
+  const harmonics=useMemo(()=>getHarmonics(waveType,16),[waveType]);
+  const desc={sine:'Pure tone. No harmonics — just the fundamental. Smooth and hollow, like a tuning fork.',saw:'Contains ALL harmonics (1/n amplitude). Bright, buzzy, aggressive. The classic synth waveform.',square:'Only ODD harmonics (1/n amplitude). Hollow, woody, clarinet-like.',triangle:'Only odd harmonics (1/n² — much weaker). Soft, muted, flute-like.'};
+  const bw=28,bg=8,baw=560,bh=100;
+  return (
+    <div className="chapter-content">
+      <p>An <strong>oscillator</strong> (VCO) is the engine of a synthesizer. It generates the raw waveform that everything else shapes. Different <strong>waveshapes</strong> have different harmonic recipes, giving them radically different characters.</p>
+      <p>What makes a sawtooth sound different from a square wave? <strong>Harmonics</strong> — simple sine waves stacked at integer multiples of the fundamental.</p>
+      <div className="viz-container">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div style={{display:'flex',gap:8}}>
+            {['sine','saw','square','triangle'].map(w=>(<button key={w} className={`wave-btn ${waveType===w?'active':''}`} onClick={()=>setWaveType(w)}>{w.charAt(0).toUpperCase()+w.slice(1)}</button>))}
+          </div>
+          <ListenToggle on={listening} onToggle={setListening} />
+        </div>
+        <WaveformSVG points={wavePoints} width={width} height={height}/>
+        <p style={{color:'var(--text-2)',fontSize:'0.85rem',margin:'12px 0 16px',minHeight:'2.5em'}}>{desc[waveType]}</p>
+        <div style={{marginTop:8}}>
+          <p style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Harmonic Content</p>
+          <svg width="100%" viewBox={`0 0 ${baw} ${bh+20}`}>
+            {harmonics.map((h,i)=>{const x=i*(bw+bg)+10;const barH=h.amp*bh;return(<g key={h.n}><rect x={x} y={bh-barH} width={bw} height={barH} fill={h.amp>0?'var(--cyan)':'var(--surface-3)'} opacity={h.amp>0?0.7:0.3} rx="2"/><text x={x+bw/2} y={bh+14} textAnchor="middle" fontSize="9" fill="var(--text-3)">{h.n}</text></g>);})}
+          </svg>
+        </div>
+      </div>
+      <VolcaCallout><p>The Volca Keys uses <strong>sawtooth</strong> in Poly/Unison/Octave/Fifth modes, and <strong>square</strong> in Ring modes. The sawtooth's rich harmonic content is why it responds so dramatically to the filter.</p></VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Why the sawtooth is king:</strong> It contains all harmonics, giving you maximum raw material for the filter to sculpt. A square wave is missing even harmonics, producing a more hollow, woodwind-like family of tones.</p>
+        <p><strong>Subtractive synthesis</strong> — start harmonically rich, subtract with a filter. The opposite, <strong>additive synthesis</strong>, builds sounds by stacking individual sine waves. Subtractive won because it's intuitive: start bright, remove what you don't want.</p>
+        <p><strong>Analog oscillators:</strong> The Volca Keys uses digitally controlled analog oscillators — analog waveform generation with digital pitch control via a 10-bit DAC. Self-tuning constantly corrects temperature-induced drift.</p>
+        <p><strong>Ring modulation</strong> multiplies two signals, producing sum and difference frequencies. This creates metallic, bell-like, dissonant tones — why the Ring voice modes sound so alien.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 3: Filters ─────────────────────────────────────────
+function Chapter3() {
+  const audio = useAudio();
+  const [cutoff,setCutoff]=useState(2000);const [resonance,setResonance]=useState(0.2);
+  const [listening,setListening]=useState(false);
+  const oscRef=useRef(null);const filterRef=useRef(null);const gainRef=useRef(null);
+  const width=560,height=200,margin=40;
+
+  // Audio: sawtooth through biquad filter
+  useEffect(() => {
+    if (listening && audio.ready && audio.ctx.current) {
+      const ctx = audio.ctx.current;
+      const osc = ctx.createOscillator();
+      const filt = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+      osc.type = 'sawtooth'; osc.frequency.value = 110;
+      filt.type = 'lowpass'; filt.frequency.value = cutoff; filt.Q.value = resonance * 25;
+      g.gain.value = 0.25;
+      osc.connect(filt); filt.connect(g); g.connect(audio.master.current);
+      osc.start();
+      oscRef.current = osc; filterRef.current = filt; gainRef.current = g;
+      return () => { g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05); setTimeout(()=>{try{osc.stop();}catch(e){}},80); oscRef.current=null;filterRef.current=null; };
+    }
+  }, [listening, audio.ready]);
+
+  useEffect(() => { if (filterRef.current) filterRef.current.frequency.value = cutoff; }, [cutoff]);
+  useEffect(() => { if (filterRef.current) filterRef.current.Q.value = resonance * 25; }, [resonance]);
+  useEffect(() => () => setListening(false), []);
+
+  const responseCurve=useMemo(()=>{const pts=[];const Q=0.5+resonance*20;for(let i=0;i<200;i++){const x=i/200;const freq=20*Math.pow(1000,x);const mag=filterMagnitude(freq,cutoff,Q);const dB=20*Math.log10(Math.max(mag,0.001));pts.push({x,y:Math.max(-36,Math.min(24,dB))});}return pts;},[cutoff,resonance]);
+  const pathD=useMemo(()=>responseCurve.map((p,i)=>{const x=margin+p.x*(width-2*margin);const yN=(p.y-(-36))/(24-(-36));const y=height-margin-yN*(height-2*margin);return`${i===0?'M':'L'}${x},${y}`;}).join(' '),[responseCurve]);
+  const cutoffX=margin+(Math.log10(cutoff/20)/3)*(width-2*margin);
+
+  return (
+    <div className="chapter-content">
+      <p>If oscillators are the raw ingredients, the <strong>filter</strong> is the sculptor. A <strong>low-pass filter</strong> lets frequencies below a cutoff pass through while attenuating everything above. It's the single most expressive tool on most synths.</p>
+      <p><strong>Resonance</strong> ("Peak" on the Volca Keys) boosts frequencies right at the cutoff. Push it far enough and the filter <strong>self-oscillates</strong>.</p>
+      <div className="viz-container">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <ListenToggle on={listening} onToggle={setListening} label={listening ? 'Filtered Saw' : 'Listen (Saw→Filter)'} />
+        </div>
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:'block'}}>
+          {[-24,-12,0,12].map(db=>{const y=height-margin-((db-(-36))/(24-(-36)))*(height-2*margin);return(<g key={db}><line x1={margin} y1={y} x2={width-margin} y2={y} stroke="var(--surface-3)" strokeWidth="1" strokeDasharray={db===0?"none":"3,3"}/><text x={margin-6} y={y+3} textAnchor="end" fontSize="9" fill="var(--text-3)">{db}dB</text></g>);})}
+          {[100,1000,10000].map(f=>{const x=margin+(Math.log10(f/20)/3)*(width-2*margin);return(<g key={f}><line x1={x} y1={margin} x2={x} y2={height-margin} stroke="var(--surface-3)" strokeWidth="1" strokeDasharray="3,3"/><text x={x} y={height-margin+14} textAnchor="middle" fontSize="9" fill="var(--text-3)">{f>=1000?`${f/1000}k`:f} Hz</text></g>);})}
+          <line x1={cutoffX} y1={margin} x2={cutoffX} y2={height-margin} stroke="var(--amber)" strokeWidth="1.5" strokeDasharray="5,4" opacity="0.6"/>
+          <text x={cutoffX} y={margin-6} textAnchor="middle" fontSize="9" fill="var(--amber)">cutoff</text>
+          <path d={pathD} fill="none" stroke="var(--cyan)" strokeWidth="2.5" strokeLinejoin="round"/>
+          <path d={`${pathD} L${width-margin},${height-margin} L${margin},${height-margin} Z`} fill="var(--cyan)" opacity="0.06"/>
+        </svg>
+        <div style={{display:'flex',gap:24,marginTop:16}}>
+          <Slider label="Cutoff" value={cutoff} onChange={setCutoff} min={40} max={16000} step={10} suffix=" Hz"/>
+          <Slider label="Resonance" value={resonance} onChange={setResonance} min={0} max={0.95} step={0.01}/>
+        </div>
+        <p style={{color:'var(--text-3)',fontSize:'0.75rem',marginTop:12,marginBottom:0}}>↑ Toggle 🔊 to hear a sawtooth through this filter. Sweep cutoff and resonance in real time!</p>
+      </div>
+      <VolcaCallout><p>The Volca Keys filter is a <strong>12dB/oct low-pass</strong> modeled on the Korg miniKORG 700S from 1974. The <strong>CUTOFF</strong> and <strong>PEAK</strong> knobs are your most important sound-shaping controls.</p></VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Filter slope — "12dB per octave":</strong> For every doubling of frequency past the cutoff, the signal drops by 12dB. A 24dB/oct filter (Moog ladder) drops twice as fast. The Volca's 12dB slope is more subtle, letting more harmonics bleed through.</p>
+        <p><strong>Self-oscillation</strong> happens when resonance feedback becomes so strong the filter generates its own sine wave. On the Volca Keys, this pitch doesn't track the keyboard — it stays wherever the Cutoff knob is set.</p>
+        <p><strong>The Korg 700S "diode ring" circuit</strong> has a distinctive aggressive resonance character — grittier than Moog or Roland designs. This is a big part of the Volca Keys' sonic personality.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 4: Envelopes ───────────────────────────────────────
+function Chapter4() {
+  const audio = useAudio();
+  const [attack,setAttack]=useState(0.05);const [decay,setDecay]=useState(0.2);const [sustain,setSustain]=useState(0.6);const [release,setRelease]=useState(0.4);
+  const [gateOn,setGateOn]=useState(false);const [envLevel,setEnvLevel]=useState(0);const [envPhase,setEnvPhase]=useState('idle');
+  const animRef=useRef();const envRef=useRef({level:0,phase:'idle'});
+  const audioNodesRef = useRef(null);
+
+  // Envelope simulation (visual + audio gain control)
+  useEffect(()=>{let last=performance.now();const tick=(now)=>{const dt=(now-last)/1000;last=now;const e=envRef.current;
+    if(e.phase==='attack'){e.level+=dt/Math.max(attack,0.01);if(e.level>=1){e.level=1;e.phase='decay';}}
+    else if(e.phase==='decay'){e.level-=dt/Math.max(decay,0.01)*(1-sustain);if(e.level<=sustain){e.level=sustain;e.phase='sustain';}}
+    else if(e.phase==='sustain'){e.level=sustain;}
+    else if(e.phase==='release'){e.level-=dt/Math.max(release,0.01)*Math.max(e.level,0.01);if(e.level<0.005){e.level=0;e.phase='idle';}}
+    // Update audio gain to match envelope
+    if (audioNodesRef.current) { audioNodesRef.current.gain.gain.value = e.level * 0.3; }
+    setEnvLevel(e.level);setEnvPhase(e.phase);animRef.current=requestAnimationFrame(tick);};
+    animRef.current=requestAnimationFrame(tick);return()=>cancelAnimationFrame(animRef.current);
+  },[attack,decay,sustain,release]);
+
+  const triggerGate = useCallback((on) => {
+    setGateOn(on);
+    if (on) {
+      envRef.current.phase = 'attack';
+      // Start audio
+      if (audio.ready && audio.ctx.current && !audioNodesRef.current) {
+        const ctx = audio.ctx.current;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.value = 220;
+        g.gain.value = 0;
+        osc.connect(g); g.connect(audio.master.current);
+        osc.start();
+        audioNodesRef.current = { osc, gain: g };
+      }
+    } else {
+      if (envRef.current.phase !== 'idle') envRef.current.phase = 'release';
+    }
+  }, [audio.ready]);
+
+  // Stop audio when envelope reaches idle
+  useEffect(() => {
+    if (envPhase === 'idle' && audioNodesRef.current) {
+      const nodes = audioNodesRef.current;
+      audioNodesRef.current = null;
+      try { nodes.osc.stop(); } catch(e) {}
+    }
+  }, [envPhase]);
+
+  useEffect(() => () => { if(audioNodesRef.current){try{audioNodesRef.current.osc.stop();}catch(e){}} audioNodesRef.current=null; }, []);
+
+  const width=560,height=160,m=30;const totalTime=attack+decay+0.4+release;const scale=(width-2*m)/totalTime;
+  const envPath=useMemo(()=>{const x0=m,x1=m+attack*scale,x2=x1+decay*scale,x3=x2+0.4*scale,x4=x3+release*scale;const yT=m,yB=height-m,yS=yB-sustain*(yB-yT);return`M${x0},${yB} L${x1},${yT} L${x2},${yS} L${x3},${yS} L${x4},${yB}`;},[attack,decay,sustain,release,scale]);
+  const x1=m+attack*scale,x2=x1+decay*scale,x3=x2+0.4*scale;
+  const phaseColors={idle:'var(--text-3)',attack:'var(--green)',decay:'var(--amber)',sustain:'var(--cyan)',release:'var(--red)'};
+  return (
+    <div className="chapter-content">
+      <p>Real sounds aren't constant — they <strong>evolve over time</strong>. <strong>Envelopes</strong> shape how a parameter changes from key press to key release.</p>
+      <p>The standard model is <strong>ADSR</strong>: <strong>Attack</strong>, <strong>Decay</strong>, <strong>Sustain</strong>, <strong>Release</strong>.</p>
+      <div className="viz-container">
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:'block'}}>
+          <line x1={m} y1={height-m} x2={width-m} y2={height-m} stroke="var(--surface-3)" strokeWidth="1"/>
+          <path d={envPath} fill="none" stroke="var(--cyan)" strokeWidth="2.5" strokeLinejoin="round"/>
+          <path d={`${envPath} L${m+(attack+decay+0.4+release)*scale},${height-m} Z`} fill="var(--cyan)" opacity="0.06"/>
+          <text x={(m+x1)/2} y={height-m+16} textAnchor="middle" fontSize="9" fill="var(--green)">A</text>
+          <text x={(x1+x2)/2} y={height-m+16} textAnchor="middle" fontSize="9" fill="var(--amber)">D</text>
+          <text x={(x2+x3)/2} y={height-m+16} textAnchor="middle" fontSize="9" fill="var(--cyan)">S</text>
+          <text x={(x3+m+(attack+decay+0.4+release)*scale)/2} y={height-m+16} textAnchor="middle" fontSize="9" fill="var(--red)">R</text>
+          <circle cx={m+6} cy={height-m-envLevel*(height-2*m)} r="5" fill={phaseColors[envPhase]} opacity="0.9"/>
+          <line x1={m+6} y1={height-m} x2={m+6} y2={height-m-envLevel*(height-2*m)} stroke={phaseColors[envPhase]} strokeWidth="2" opacity="0.4"/>
+        </svg>
+        <div style={{display:'flex',gap:16,marginTop:16,flexWrap:'wrap'}}>
+          <Slider label="Attack" value={attack} onChange={setAttack} min={0.01} max={1.5} step={0.01} suffix="s"/>
+          <Slider label="Decay" value={decay} onChange={setDecay} min={0.01} max={1} step={0.01} suffix="s"/>
+          <Slider label="Sustain" value={sustain} onChange={setSustain} min={0} max={1} step={0.01}/>
+          <Slider label="Release" value={release} onChange={setRelease} min={0.01} max={2} step={0.01} suffix="s"/>
+        </div>
+        <div style={{marginTop:16}}>
+          <button className={`wave-btn ${gateOn?'active':''}`} style={{padding:'10px 24px',fontSize:'0.85rem'}}
+            onMouseDown={()=>{if(!audio.ready)audio.init();triggerGate(true);}} onMouseUp={()=>triggerGate(false)}
+            onTouchStart={(e)=>{e.preventDefault();if(!audio.ready)audio.init();triggerGate(true);}} onTouchEnd={()=>triggerGate(false)}>
+            {gateOn?'◉ Key Held — listen to the envelope!':'○ Hold to Play (with sound!)'}
+          </button>
+          <span style={{marginLeft:12,fontFamily:'var(--font-mono)',fontSize:'0.75rem',color:phaseColors[envPhase]}}>{envPhase.toUpperCase()}</span>
+        </div>
+      </div>
+      <VolcaCallout>
+        <p>The Volca Keys envelope has <strong>ATTACK</strong>, <strong>DECAY/RELEASE</strong> (single knob), and <strong>SUSTAIN</strong>. Two <strong>EG INT</strong> knobs route it to VCO pitch and VCF cutoff.</p>
+      </VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Envelope → filter cutoff</strong> is one of the most important routings. Fast attack + moderate decay = the filter opens briefly at note start = classic percussive "pluck." The Volca's <strong>CUTOFF EG INT</strong> controls this.</p>
+        <p><strong>Envelope → pitch</strong> (VCO EG INT): small amounts add subtle pitch transients, large amounts create laser/zap effects.</p>
+        <p><strong>The Volca's linked Decay/Release</strong> means you can't have fast decay with long release. A common trade-off on affordable synths.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 5: LFO & Modulation ────────────────────────────────
+function Chapter5() {
+  const audio = useAudio();
+  const [lfoWave,setLfoWave]=useState('triangle');const [lfoRate,setLfoRate]=useState(3);const [target,setTarget]=useState('pitch');const [phase,setPhase]=useState(0);
+  const [listening,setListening]=useState(false);
+  const nodesRef = useRef(null);
+  const animRef=useRef();
+
+  useEffect(()=>{let last=performance.now();const tick=(now)=>{const dt=(now-last)/1000;last=now;setPhase(p=>(p+dt*lfoRate)%100);animRef.current=requestAnimationFrame(tick);};animRef.current=requestAnimationFrame(tick);return()=>cancelAnimationFrame(animRef.current);},[lfoRate]);
+
+  // Audio: tone with LFO modulation
+  useEffect(() => {
+    if (listening && audio.ready && audio.ctx.current) {
+      const ctx = audio.ctx.current;
+      const osc = ctx.createOscillator();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      const filt = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+
+      osc.type = 'sawtooth'; osc.frequency.value = 220;
+      filt.type = 'lowpass'; filt.frequency.value = 3000; filt.Q.value = 2;
+      g.gain.value = 0.22;
+
+      const waveMap = { triangle: 'triangle', saw: 'sawtooth', square: 'square' };
+      lfo.type = waveMap[lfoWave] || 'triangle';
+      lfo.frequency.value = lfoRate;
+
+      if (target === 'pitch') {
+        lfoGain.gain.value = 30; // ±30 Hz pitch wobble
+        lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+      } else if (target === 'filter') {
+        lfoGain.gain.value = 2000;
+        lfo.connect(lfoGain); lfoGain.connect(filt.frequency);
+      } else { // amplitude
+        lfoGain.gain.value = 0.1;
+        lfo.connect(lfoGain); lfoGain.connect(g.gain);
+      }
+
+      osc.connect(filt); filt.connect(g); g.connect(audio.master.current);
+      osc.start(); lfo.start();
+      nodesRef.current = { osc, lfo, lfoGain, filt, g };
+      return () => {
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        setTimeout(() => { try{osc.stop();lfo.stop();}catch(e){} }, 80);
+        nodesRef.current = null;
+      };
+    }
+  }, [listening, audio.ready, lfoWave, target]);
+
+  // Update LFO rate in real time
+  useEffect(() => { if (nodesRef.current) nodesRef.current.lfo.frequency.value = lfoRate; }, [lfoRate]);
+
+  useEffect(() => () => setListening(false), []);
+
+  const lfoValue=useMemo(()=>{const t=phase%1;switch(lfoWave){case 'triangle':return 4*Math.abs(t-0.5)-1;case 'saw':return 2*t-1;case 'square':return t<0.5?1:-1;default:return 0;}},[phase,lfoWave]);
+  const width=560,height=220,m=30;
+  const trailPoints=useMemo(()=>{const pts=[];for(let i=0;i<200;i++){const t=((phase-(200-i)*0.005)%100+100)%1;let y;switch(lfoWave){case 'triangle':y=4*Math.abs(t-0.5)-1;break;case 'saw':y=2*t-1;break;case 'square':y=t<0.5?1:-1;break;default:y=0;}pts.push({x:i/200,y});}return pts;},[phase,lfoWave]);
+  const targetLabels={pitch:'Pitch — Vibrato',filter:'Filter Cutoff — Wah',amplitude:'Volume — Tremolo'};
+  const targetColors={pitch:'var(--cyan)',filter:'var(--amber)',amplitude:'var(--green)'};
+  return (
+    <div className="chapter-content">
+      <p>An <strong>LFO</strong> (Low Frequency Oscillator) modulates other parameters, making them wobble rhythmically. Route it to <strong>pitch</strong> = vibrato. To <strong>filter cutoff</strong> = wah. To <strong>amplitude</strong> = tremolo.</p>
+      <div className="viz-container">
+        <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
+          <span style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--text-3)',marginRight:4}}>LFO:</span>
+          {['saw','triangle','square'].map(w=>(<button key={w} className={`wave-btn ${lfoWave===w?'active':''}`} onClick={()=>setLfoWave(w)}>{w.charAt(0).toUpperCase()+w.slice(1)}</button>))}
+          <span style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--text-3)',margin:'0 8px 0 16px'}}>TARGET:</span>
+          {['pitch','filter','amplitude'].map(t=>(<button key={t} className={`wave-btn ${target===t?'active':''}`} style={target===t?{borderColor:targetColors[t],color:targetColors[t],background:targetColors[t]+'20'}:{}} onClick={()=>setTarget(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>))}
+          <div style={{marginLeft:'auto'}}><ListenToggle on={listening} onToggle={setListening}/></div>
+        </div>
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:'block'}}>
+          <text x={m} y={18} fontSize="9" fill="var(--text-3)">LFO Output</text>
+          <g transform="translate(0,-20)">
+            <line x1={m} y1={height*0.3} x2={width-m} y2={height*0.3} stroke="var(--surface-3)" strokeWidth="1"/>
+            {trailPoints.map((p,i)=>{const x=m+p.x*(width-2*m);const y=height*0.3-p.y*25;return i>0?(<line key={i} x1={m+trailPoints[i-1].x*(width-2*m)} y1={height*0.3-trailPoints[i-1].y*25} x2={x} y2={y} stroke="var(--cyan)" strokeWidth="1.5" opacity={i/200}/>):null;})}
+          </g>
+          <text x={m} y={height*0.52} fontSize="9" fill="var(--text-3)">{targetLabels[target]}</text>
+          <rect x={width*0.2} y={height*0.58} width={width*0.6} height={30} rx="4" fill="var(--surface-2)" stroke="var(--border)" strokeWidth="1"/>
+          <line x1={width*0.5} y1={height*0.58} x2={width*0.5} y2={height*0.58+30} stroke="var(--text-3)" strokeWidth="1" strokeDasharray="2,2"/>
+          <circle cx={width*0.5+lfoValue*width*0.18} cy={height*0.58+15} r="8" fill={targetColors[target]} opacity="0.9"/>
+          <circle cx={width*0.5+lfoValue*width*0.18} cy={height*0.58+15} r="12" fill={targetColors[target]} opacity="0.2"/>
+          <text x={width*0.2-4} y={height*0.58+19} textAnchor="end" fontSize="8" fill="var(--text-3)">Low</text>
+          <text x={width*0.8+4} y={height*0.58+19} textAnchor="start" fontSize="8" fill="var(--text-3)">High</text>
+        </svg>
+        <div style={{display:'flex',gap:24,marginTop:8}}><Slider label="LFO Rate" value={lfoRate} onChange={setLfoRate} min={0.5} max={15} step={0.1} suffix=" Hz"/></div>
+        {target==='amplitude'&&<p style={{color:'var(--amber)',fontSize:'0.75rem',marginTop:12,marginBottom:0,fontFamily:'var(--font-mono)'}}>⚠ The Volca Keys cannot route its LFO to amplitude. Shown here as a general synthesis concept.</p>}
+      </div>
+      <VolcaCallout>
+        <p>The Volca Keys LFO has saw, triangle, square waveforms. <strong>PITCH INT</strong> controls vibrato depth, <strong>CUTOFF INT</strong> controls filter wah depth. It cannot modulate amplitude.</p>
+      </VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Free-running vs. retriggered LFO:</strong> Free-running keeps cycling regardless of notes (organic). Retriggered resets on each note (consistent). The Volca Keys lets you toggle this.</p>
+        <p><strong>Audio-rate modulation:</strong> Crank the Volca's LFO rate into audio frequencies for FM-like metallic effects.</p>
+        <p><strong>The modulation matrix concept:</strong> "Source → amount → destination" is the mental model that scales to every synth you'll ever use.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 6: Signal Flow ─────────────────────────────────────
+function Chapter6() {
+  const [activeBlock,setActiveBlock]=useState(null);
+  const blocks=[
+    {id:'vco',label:'VCO',sub:'×3 Oscillators',x:60,y:80,color:'var(--cyan)',desc:'Three analog oscillators generate the raw waveform. VOICE knob sets configuration and waveform.'},
+    {id:'vcf',label:'VCF',sub:'Filter',x:240,y:80,color:'var(--amber)',desc:'Single 12dB/oct low-pass filter. All three voices share it — the paraphonic limitation.'},
+    {id:'vca',label:'VCA',sub:'Amplifier',x:420,y:80,color:'var(--green)',desc:'Controls final volume. Envelope shapes it. All three voices share this too.'},
+  ];
+  const modSources=[
+    {id:'eg',label:'EG',sub:'Envelope',x:200,y:200,color:'var(--red)',desc:'Modulates VCA (volume), VCO pitch (EG INT), and VCF cutoff (CUTOFF EG INT).'},
+    {id:'lfo',label:'LFO',sub:'Low Freq Osc',x:360,y:200,color:'#a78bfa',desc:'Modulates pitch (PITCH INT) and filter cutoff (CUTOFF INT). Three waveforms, adjustable rate.'},
+  ];
+  const width=560,height=280;
+  return (
+    <div className="chapter-content">
+      <p>In <strong>subtractive synthesis</strong>, the signal flows: <strong>Oscillator</strong> → <strong>Filter</strong> → <strong>Amplifier</strong>. The LFO and Envelope modulate these stages.</p>
+      <p>The Volca Keys is <strong>paraphonic</strong>: 3 oscillators share one filter and one amplifier. You get chords, but can't shape each note independently.</p>
+      <div className="viz-container">
+        <p style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--text-3)',marginBottom:12}}>CLICK A BLOCK TO LEARN MORE</p>
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{display:'block'}}>
+          <defs><marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--text-3)"/></marker><marker id="modarrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="6" markerHeight="5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--text-3)" opacity="0.5"/></marker></defs>
+          <line x1="150" y1="90" x2="228" y2="90" stroke="var(--text-3)" strokeWidth="2" markerEnd="url(#arrow)"/>
+          <line x1="330" y1="90" x2="408" y2="90" stroke="var(--text-3)" strokeWidth="2" markerEnd="url(#arrow)"/>
+          <line x1="510" y1="90" x2="545" y2="90" stroke="var(--text-3)" strokeWidth="2" markerEnd="url(#arrow)"/>
+          <text x="548" y="94" fontSize="9" fill="var(--text-3)">OUT</text>
+          <path d="M240,195 L260,120" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3" markerEnd="url(#modarrow)" opacity="0.5"/>
+          <path d="M220,195 L120,115" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3" markerEnd="url(#modarrow)" opacity="0.5"/>
+          <path d="M250,200 L420,120" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3" markerEnd="url(#modarrow)" opacity="0.4"/>
+          <path d="M380,195 L290,120" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3" markerEnd="url(#modarrow)" opacity="0.5"/>
+          <path d="M400,195 L120,110" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3" markerEnd="url(#modarrow)" opacity="0.3"/>
+          {blocks.map(b=>(<g key={b.id} onClick={()=>setActiveBlock(activeBlock===b.id?null:b.id)} style={{cursor:'pointer'}}><rect x={b.x} y={b.y-28} width={90} height={56} rx="8" fill={activeBlock===b.id?b.color+'25':'var(--surface-2)'} stroke={activeBlock===b.id?b.color:'var(--border)'} strokeWidth={activeBlock===b.id?2:1}/><text x={b.x+45} y={b.y-4} textAnchor="middle" fontSize="14" fontWeight="700" fill={b.color}>{b.label}</text><text x={b.x+45} y={b.y+14} textAnchor="middle" fontSize="8" fill="var(--text-3)">{b.sub}</text></g>))}
+          {modSources.map(b=>(<g key={b.id} onClick={()=>setActiveBlock(activeBlock===b.id?null:b.id)} style={{cursor:'pointer'}}><rect x={b.x-40} y={b.y-20} width={80} height={40} rx="20" fill={activeBlock===b.id?b.color+'25':'var(--surface-2)'} stroke={activeBlock===b.id?b.color:'var(--border)'} strokeWidth={activeBlock===b.id?2:1} strokeDasharray="4,2"/><text x={b.x} y={b.y-2} textAnchor="middle" fontSize="12" fontWeight="600" fill={b.color}>{b.label}</text><text x={b.x} y={b.y+12} textAnchor="middle" fontSize="7" fill="var(--text-3)">{b.sub}</text></g>))}
+          <line x1="30" y1="260" x2="60" y2="260" stroke="var(--text-3)" strokeWidth="2"/><text x="64" y="263" fontSize="8" fill="var(--text-3)">Audio signal</text>
+          <line x1="140" y1="260" x2="170" y2="260" stroke="var(--text-3)" strokeWidth="1" strokeDasharray="4,3"/><text x="174" y="263" fontSize="8" fill="var(--text-3)">Modulation</text>
+        </svg>
+        {activeBlock&&(<div style={{background:'var(--surface-2)',borderRadius:8,padding:'12px 16px',marginTop:12,borderLeft:`3px solid ${[...blocks,...modSources].find(b=>b.id===activeBlock)?.color}`}}><p style={{fontSize:'0.85rem',color:'var(--text-2)',margin:0}}>{[...blocks,...modSources].find(b=>b.id===activeBlock)?.desc}</p></div>)}
+      </div>
+      <VolcaCallout><p>The <strong>VOICE</strong> knob sets oscillator config + waveform. Everything downstream stays the same.</p></VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Monophonic vs. paraphonic vs. polyphonic:</strong> Mono = 1 note. Poly = full duplicate signal path per voice. Paraphonic = multiple oscillators, shared filter/amp. The Volca Keys is paraphonic.</p>
+        <p><strong>"VC" = Voltage Controlled.</strong> In analog synthesis, everything is controlled by voltages. The Volca uses a digital CPU to generate control voltages via a 10-bit DAC, driving genuine analog circuitry.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── Chapter 7: Sequencer & Effects ─────────────────────────────
+function Chapter7() {
+  const audio = useAudio();
+  const [steps,setSteps]=useState(Array(16).fill(0).map((_,i)=>({active:i%4===0||i===7||i===11,note:0})));
+  const [playhead,setPlayhead]=useState(-1);const [playing,setPlaying]=useState(false);const [bpm,setBpm]=useState(120);
+  const [activeSteps,setActiveSteps]=useState(Array(16).fill(true));const intervalRef=useRef();const [showAS,setShowAS]=useState(false);
+  const noteNames=['C','D','E','F','G','A','B',"C'"];
+
+  useEffect(()=>{
+    if(playing){
+      const ms=(60000/bpm)/4;
+      intervalRef.current=setInterval(()=>{
+        setPlayhead(p=>{
+          let n=(p+1)%16; let s=0;
+          while(!activeSteps[n]&&s<16){n=(n+1)%16;s++;}
+          return n;
+        });
+      },ms);
+    } else {
+      clearInterval(intervalRef.current); setPlayhead(-1);
+    }
+    return()=>clearInterval(intervalRef.current);
+  },[playing,bpm,activeSteps]);
+
+  // Play note when playhead hits an active step
+  const prevPlayhead = useRef(-1);
+  useEffect(() => {
+    if (playhead >= 0 && playhead !== prevPlayhead.current && audio.ready && audio.ctx.current) {
+      const step = steps[playhead];
+      if (step.active) {
+        const ctx = audio.ctx.current;
+        const freq = NOTE_FREQS[noteNames[step.note]] || 261.63;
+        const osc = ctx.createOscillator();
+        const filt = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.value = freq;
+        filt.type = 'lowpass'; filt.frequency.value = 2500; filt.Q.value = 1;
+        const dur = Math.min((60 / bpm) / 4 * 0.8, 0.3);
+        g.gain.setValueAtTime(0.22, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        osc.connect(filt); filt.connect(g); g.connect(audio.master.current);
+        osc.start(); osc.stop(ctx.currentTime + dur + 0.02);
+      }
+    }
+    prevPlayhead.current = playhead;
+  }, [playhead, steps, audio.ready, bpm]);
+
+  useEffect(() => () => setPlaying(false), []);
+
+  const toggleStep=(i)=>{const n=[...steps];n[i]={...n[i],active:!n[i].active};setSteps(n);};
+  const toggleAS=(i)=>{const n=[...activeSteps];n[i]=!n[i];setActiveSteps(n);};
+  const cycleNote=(i)=>{const n=[...steps];n[i]={...n[i],note:(n[i].note+1)%noteNames.length};setSteps(n);};
+
+  return (
+    <div className="chapter-content">
+      <p>A <strong>step sequencer</strong> loops through 16 steps automatically. On the Volca Keys you record in <strong>real time</strong>. <strong>Motion sequencing</strong> records knob movements into the pattern.</p>
+      <div className="viz-container">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div style={{display:'flex',gap:8}}>
+            <button className={`wave-btn ${playing?'active':''}`} onClick={()=>{if(!audio.ready)audio.init();setPlaying(!playing);}}>{playing?'■ Stop':'▶ Play'}</button>
+            <button className={`wave-btn ${showAS?'active':''}`} style={showAS?{borderColor:'var(--amber)',color:'var(--amber)',background:'var(--amber-dim)'}:{}} onClick={()=>setShowAS(!showAS)}>Active Step</button>
+          </div>
+          <div style={{width:160}}><Slider label="BPM" value={bpm} onChange={setBpm} min={60} max={200} step={1}/></div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(16, 1fr)',gap:4}}>
+          {steps.map((step,i)=>{const isP=playhead===i;const isI=!activeSteps[i];
+            if(showAS) return(<div key={i} onClick={()=>toggleAS(i)} style={{height:48,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.65rem',fontFamily:'var(--font-mono)',background:isI?'var(--surface-3)':'var(--amber-dim)',border:`1px solid ${isI?'var(--border)':'var(--amber)'}`,color:isI?'var(--text-3)':'var(--amber)',opacity:isI?0.4:1,transition:'all 0.15s'}}>{i+1}</div>);
+            return(<div key={i} onClick={()=>toggleStep(i)} style={{height:48,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:2,fontSize:'0.65rem',fontFamily:'var(--font-mono)',background:isP&&step.active?'var(--cyan)':step.active?'var(--cyan-dim)':'var(--surface-2)',border:`1px solid ${isP?'var(--cyan)':step.active?'var(--cyan)40':'var(--border)'}`,color:isP&&step.active?'var(--bg)':step.active?'var(--cyan)':'var(--text-3)',opacity:isI?0.25:1,boxShadow:isP&&step.active?'0 0 12px var(--cyan-dim)':'none',transition:'background 0.08s, box-shadow 0.08s'}}><span>{i+1}</span>{step.active&&<span style={{fontSize:'0.55rem'}} onClick={e=>{e.stopPropagation();cycleNote(i);}}>{noteNames[step.note]}</span>}</div>);
+          })}
+        </div>
+        <p style={{color:'var(--text-3)',fontSize:'0.75rem',marginTop:12,marginBottom:0}}>↑ Press Play to hear it! Click steps to toggle, click note names to change pitch, use Active Step to skip steps.</p>
+      </div>
+      <p style={{marginTop:16}}>The built-in <strong>delay effect</strong> adds lo-fi echo. <strong>TIME</strong> sets spacing, <strong>FEEDBACK</strong> controls repeats. Moving TIME while echoes sound warps their pitch like tape echo.</p>
+      <VolcaCallout><p><strong>FUNC + PLAY</strong> = Active Step. <strong>REC</strong> during playback = record. Up to <strong>8 patterns</strong> saved. <strong>Flux mode</strong> (FUNC + step 15) = unquantized recording.</p></VolcaCallout>
+      <DiveDeeper>
+        <p><strong>Active Step creates polyrhythms:</strong> Disabling steps to create odd-length loops (5, 7, 11 steps) produces complex rhythmic results against the 4/4 grid.</p>
+        <p><strong>The delay as an instrument:</strong> At extreme feedback it self-oscillates, producing sound that persists after you stop playing. Many musicians treat it as a sound source, not just an effect.</p>
+      </DiveDeeper>
+    </div>
+  );
+}
+
+// ─── App Shell ──────────────────────────────────────────────────
+const chapters=[
+  {num:1,title:'What Is Sound?',subtitle:'Vibrations, waveforms & the basics',component:Chapter1},
+  {num:2,title:'Oscillators & Waveforms',subtitle:'The raw ingredients of synthesis',component:Chapter2},
+  {num:3,title:'Filters',subtitle:'Sculpting tone with frequency',component:Chapter3},
+  {num:4,title:'Envelopes',subtitle:'Shaping sound over time',component:Chapter4},
+  {num:5,title:'LFO & Modulation',subtitle:'Adding movement and expression',component:Chapter5},
+  {num:6,title:'Signal Flow',subtitle:'How it all connects',component:Chapter6},
+  {num:7,title:'Sequencer & Effects',subtitle:'Making patterns and adding space',component:Chapter7},
+];
+
+function App(){
+  const [cur,setCur]=useState(0);
+  const audio = useAudio();
+  const ch=chapters[cur];const C=ch.component;
+  return(
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+      <header style={{borderBottom:'1px solid var(--border)',background:'var(--surface)',padding:'16px 24px',position:'sticky',top:0,zIndex:100,backdropFilter:'blur(12px)'}}>
+        <div style={{maxWidth:800,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <h1 style={{fontFamily:'var(--font-mono)',fontSize:'0.85rem',fontWeight:700,letterSpacing:'0.05em',color:'var(--amber)'}}>SYNTHESIS FUNDAMENTALS</h1>
+            <p style={{fontFamily:'var(--font-mono)',fontSize:'0.65rem',color:'var(--text-3)',marginTop:2}}>A course for the Korg Volca Keys</p>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            {audio.ready && (
+              <button className={`audio-btn ${audio.muted ? 'audio-off' : 'audio-on'}`}
+                onClick={() => audio.setMuted(!audio.muted)}
+                style={{marginRight:8}}>
+                {audio.muted ? '🔇 Muted' : '🔊 Audio'}
+              </button>
+            )}
+            {chapters.map((c,i)=>(<button key={i} className={`nav-btn ${i===cur?'active':''}`} onClick={()=>setCur(i)} title={c.title}>{c.num}</button>))}
+          </div>
+        </div>
+      </header>
+      <main style={{flex:1,maxWidth:800,margin:'0 auto',padding:'40px 24px 80px',width:'100%'}}>
+        <div style={{marginBottom:32}}>
+          <div style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--amber)',letterSpacing:'0.1em',marginBottom:8}}>CHAPTER {ch.num} OF {chapters.length}</div>
+          <h2 style={{fontFamily:'var(--font-body)',fontSize:'1.8rem',fontWeight:700,marginBottom:4,lineHeight:1.2}}>{ch.title}</h2>
+          <p style={{color:'var(--text-3)',fontSize:'0.9rem'}}>{ch.subtitle}</p>
+        </div>
+        <C key={cur} />
+        <div style={{display:'flex',justifyContent:'space-between',marginTop:48,paddingTop:24,borderTop:'1px solid var(--border)'}}>
+          {cur>0?(<button className="wave-btn" onClick={()=>{setCur(cur-1);window.scrollTo(0,0);}} style={{padding:'10px 20px'}}>← {chapters[cur-1].title}</button>):<div/>}
+          {cur<chapters.length-1?(<button className="wave-btn" onClick={()=>{setCur(cur+1);window.scrollTo(0,0);}} style={{padding:'10px 20px',borderColor:'var(--amber)',color:'var(--amber)'}}>{chapters[cur+1].title} →</button>):(<span style={{fontFamily:'var(--font-mono)',fontSize:'0.8rem',color:'var(--green)',alignSelf:'center'}}>✓ Course complete — time to play!</span>)}
+        </div>
+      </main>
+      <footer style={{borderTop:'1px solid var(--border)',padding:'16px 24px',textAlign:'center'}}><p style={{fontFamily:'var(--font-mono)',fontSize:'0.65rem',color:'var(--text-3)'}}>Interactive synthesis course with Web Audio. Best experienced with headphones.</p></footer>
+    </div>
+  );
+}
+
+ReactDOM.render(<AudioProvider><App/></AudioProvider>,document.getElementById('root'));
+</script>
+</body>
+</html>

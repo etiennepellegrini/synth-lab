@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Synth Lab — Interactive Synthesizer</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#08080d"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#08080d; --surface:#111118; --surface-2:#1a1a24; --surface-3:#242430;
+  --border:#2e2e3d; --text:#eeeef2; --text-2:#9999b0; --text-3:#66667a;
+  --amber:#f5a623; --amber-dim:#f5a62340; --cyan:#22d3ee; --cyan-dim:#22d3ee30;
+  --red:#f06050; --green:#34d399; --purple:#a78bfa;
+  --font-body:'Outfit',sans-serif; --font-mono:'Source Code Pro',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;overflow-x:hidden;touch-action:manipulation;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:3px;}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.header h1{font-family:var(--font-mono);font-size:0.8rem;font-weight:700;letter-spacing:0.06em;color:var(--amber);}
+.header .sub{font-family:var(--font-mono);font-size:0.6rem;color:var(--text-3);margin-top:1px;}
+.master-vol{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:0.65rem;color:var(--text-3);}
+.master-vol input{width:70px;}
+
+/* Module card */
+.module{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.module-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;}
+.module-head:hover{background:var(--surface-2);}
+.module-title{font-family:var(--font-mono);font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+.module-toggle{width:36px;height:20px;border-radius:10px;border:1px solid var(--border);background:var(--surface-3);position:relative;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.module-toggle.on{background:var(--green)30;border-color:var(--green);}
+.module-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-3);transition:all 0.2s;}
+.module-toggle.on::after{left:18px;background:var(--green);}
+.module-body{padding:6px 14px 14px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+.module-body.collapsed{display:none;}
+
+/* Knob */
+.knob-group{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;}
+.knob-label{font-family:var(--font-mono);font-size:0.58rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;text-align:center;}
+.knob-value{font-family:var(--font-mono);font-size:0.6rem;color:var(--text-2);}
+.knob-input{width:52px;-webkit-appearance:none;appearance:none;height:3px;background:var(--surface-3);border-radius:2px;outline:none;}
+.knob-input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--amber);cursor:pointer;}
+
+/* Wave selector buttons */
+.wave-sel{display:flex;gap:3px;}
+.wave-sel button{font-family:var(--font-mono);font-size:0.6rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-3);cursor:pointer;transition:all 0.12s;white-space:nowrap;}
+.wave-sel button:hover{border-color:var(--text-3);color:var(--text);}
+.wave-sel button.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+
+/* Target selector */
+.target-sel button.active{border-color:var(--purple);color:var(--purple);background:#a78bfa20;}
+
+/* Scope canvas */
+.scope-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.scope-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;}
+.scope-head:hover{background:var(--surface-2);}
+.scope-head .module-title{color:var(--cyan);}
+canvas{display:block;width:100%;background:#0a0a12;}
+
+/* Envelope viz */
+.env-viz{width:100%;height:48px;margin-top:4px;border-radius:4px;overflow:hidden;}
+
+/* Keyboard */
+.keyboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;padding:10px 14px 14px;}
+.keyboard-row{display:flex;position:relative;height:100px;user-select:none;touch-action:none;}
+.key-white{flex:1;background:linear-gradient(180deg,#e8e8e8,#d0d0d0);border:1px solid #888;border-radius:0 0 5px 5px;cursor:pointer;position:relative;z-index:1;transition:background 0.06s;}
+.key-white.active{background:linear-gradient(180deg,var(--cyan),#1a9aaa);}
+.key-white .key-label{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:0.55rem;color:#666;}
+.key-white.active .key-label{color:#fff;}
+.key-black{width:8%;background:linear-gradient(180deg,#333,#111);border:1px solid #000;border-radius:0 0 3px 3px;height:60%;position:absolute;z-index:2;cursor:pointer;transition:background 0.06s;}
+.key-black.active{background:linear-gradient(180deg,var(--amber),#c08010);}
+.octave-ctrl{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.octave-ctrl button{font-family:var(--font-mono);font-size:0.75rem;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);cursor:pointer;}
+.octave-ctrl button:hover{border-color:var(--text-3);color:var(--text);}
+.octave-ctrl span{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3);}
+.qwerty-hint{font-family:var(--font-mono);font-size:0.55rem;color:var(--text-3);margin-top:6px;}
+
+/* Layout */
+.container{max-width:720px;margin:0 auto;padding:8px;}
+
+/* Signal flow indicator */
+.signal-flow{display:flex;align-items:center;gap:4px;padding:4px 14px 8px;flex-wrap:wrap;}
+.signal-flow .node{font-family:var(--font-mono);font-size:0.58rem;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text-3);}
+.signal-flow .node.on{border-color:var(--green);color:var(--green);background:var(--green)10;}
+.signal-flow .arrow{color:var(--text-3);font-size:0.6rem;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>SYNTH LAB</h1>
+    <div class="sub">Interactive Synthesizer Simulator</div>
+  </div>
+  <div class="master-vol">
+    <span>VOL</span>
+    <input type="range" id="masterVol" min="0" max="100" value="40"/>
+  </div>
+</div>
+<div class="container" id="app"></div>
+
+<script>
+// ─── Audio Engine ───────────────────────────────────────────────
+let actx = null;
+let masterGain = null;
+let limiter = null;
+let analyser = null;
+
+// Nodes
+let osc = null;
+let filterNode = null;
+let ampGain = null; // envelope-controlled
+let delayNode = null;
+let delayFeedback = null;
+let delayWet = null;
+let delayDry = null;
+let lfoOsc = null;
+let lfoGain = null;
+
+// State
+const state = {
+  audioReady: false,
+  // OSC
+  oscWave: 'sawtooth',
+  oscDetune: 0,
+  // Filter
+  filterOn: true,
+  filterCutoff: 8000,
+  filterRes: 0,
+  // Envelope
+  envOn: true,
+  envA: 0.01,
+  envD: 0.15,
+  envS: 0.7,
+  envR: 0.3,
+  envPhase: 'idle', // idle, attack, decay, sustain, release
+  envLevel: 0,
+  envStartTime: 0,
+  envReleaseStart: 0,
+  envReleaseLvl: 0,
+  // LFO
+  lfoOn: false,
+  lfoWave: 'triangle',
+  lfoRate: 4,
+  lfoDepth: 30,
+  lfoTarget: 'pitch', // pitch, filter
+  // Delay
+  delayOn: false,
+  delayTime: 0.3,
+  delayFB: 0.3,
+  delayMix: 0.3,
+  // Keyboard
+  octave: 4,
+  activeNote: null,
+  gateOn: false,
+  // UI
+  scopeOpen: true,
+  spectrumOpen: false,
+  masterVol: 0.4,
+};
+
+function initAudio() {
+  if (actx) { actx.resume(); return; }
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+
+  masterGain = actx.createGain();
+  masterGain.gain.value = state.masterVol;
+
+  limiter = actx.createDynamicsCompressor();
+  limiter.threshold.value = -6;
+  limiter.knee.value = 12;
+  limiter.ratio.value = 8;
+
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.7;
+
+  // Signal chain: osc → filter → ampGain → delay split → masterGain → limiter → analyser → dest
+  filterNode = actx.createBiquadFilter();
+  filterNode.type = 'lowpass';
+  filterNode.frequency.value = state.filterCutoff;
+  filterNode.Q.value = state.filterRes;
+
+  ampGain = actx.createGain();
+  ampGain.gain.value = 0; // controlled by envelope
+
+  // Delay
+  delayNode = actx.createDelay(2.0);
+  delayNode.delayTime.value = state.delayTime;
+  delayFeedback = actx.createGain();
+  delayFeedback.gain.value = state.delayFB;
+  delayWet = actx.createGain();
+  delayWet.gain.value = state.delayOn ? state.delayMix : 0;
+  delayDry = actx.createGain();
+  delayDry.gain.value = 1;
+
+  // Wire delay
+  ampGain.connect(delayDry);
+  ampGain.connect(delayNode);
+  delayNode.connect(delayFeedback);
+  delayFeedback.connect(delayNode);
+  delayNode.connect(delayWet);
+  delayDry.connect(masterGain);
+  delayWet.connect(masterGain);
+
+  masterGain.connect(limiter);
+  limiter.connect(analyser);
+  analyser.connect(actx.destination);
+
+  // Create persistent oscillator
+  osc = actx.createOscillator();
+  osc.type = state.oscWave;
+  osc.frequency.value = 0;
+  osc.detune.value = state.oscDetune;
+  osc.connect(filterNode);
+  filterNode.connect(ampGain);
+  osc.start();
+
+  // LFO
+  lfoOsc = actx.createOscillator();
+  lfoGain = actx.createGain();
+  lfoOsc.type = state.lfoWave;
+  lfoOsc.frequency.value = state.lfoRate;
+  lfoGain.gain.value = 0;
+  lfoOsc.connect(lfoGain);
+  lfoOsc.start();
+  applyLfoRouting();
+
+  state.audioReady = true;
+  startEnvelopeLoop();
+}
+
+function applyLfoRouting() {
+  if (!lfoGain || !osc || !filterNode) return;
+  try { lfoGain.disconnect(); } catch(e) {}
+  if (!state.lfoOn) { lfoGain.gain.value = 0; return; }
+
+  if (state.lfoTarget === 'pitch') {
+    lfoGain.gain.value = state.lfoDepth;
+    lfoGain.connect(osc.frequency);
+  } else {
+    lfoGain.gain.value = state.lfoDepth * 80; // scale for filter freq
+    lfoGain.connect(filterNode.frequency);
+  }
+}
+
+// ─── Envelope processing (frame-based) ─────────────────────────
+let envRAF = null;
+function startEnvelopeLoop() {
+  let last = performance.now();
+  function tick(now) {
+    const dt = (now - last) / 1000;
+    last = now;
+    processEnvelope(dt);
+    envRAF = requestAnimationFrame(tick);
+  }
+  envRAF = requestAnimationFrame(tick);
+}
+
+function processEnvelope(dt) {
+  if (!ampGain) return;
+  const s = state;
+
+  if (!s.envOn) {
+    // No envelope: gate = full volume
+    if (s.gateOn) { s.envLevel = 1; } else { s.envLevel = Math.max(0, s.envLevel - dt * 10); }
+    ampGain.gain.value = s.envLevel * 0.35;
+    s.envPhase = s.gateOn ? 'sustain' : (s.envLevel > 0.01 ? 'release' : 'idle');
+    return;
+  }
+
+  switch (s.envPhase) {
+    case 'attack':
+      s.envLevel += dt / Math.max(s.envA, 0.005);
+      if (s.envLevel >= 1) { s.envLevel = 1; s.envPhase = 'decay'; }
+      break;
+    case 'decay':
+      s.envLevel -= dt / Math.max(s.envD, 0.005) * (1 - s.envS);
+      if (s.envLevel <= s.envS) { s.envLevel = s.envS; s.envPhase = 'sustain'; }
+      break;
+    case 'sustain':
+      s.envLevel = s.envS;
+      break;
+    case 'release':
+      s.envLevel -= dt / Math.max(s.envR, 0.005) * s.envLevel;
+      if (s.envLevel < 0.003) { s.envLevel = 0; s.envPhase = 'idle'; }
+      break;
+    default:
+      s.envLevel = 0;
+  }
+  ampGain.gain.value = s.envLevel * 0.35;
+}
+
+// ─── Note on/off ────────────────────────────────────────────────
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function noteFreq(note, octave) {
+  const idx = NOTE_NAMES.indexOf(note);
+  const midi = (octave + 1) * 12 + idx;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function noteOn(note, oct) {
+  if (!actx) initAudio();
+  if (!osc) return;
+  const freq = noteFreq(note, oct || state.octave);
+  osc.frequency.setValueAtTime(freq, actx.currentTime);
+  state.activeNote = note;
+  state.gateOn = true;
+  state.envPhase = 'attack';
+  state.envLevel = state.envLevel || 0; // retrigger from current level
+  render();
+}
+
+function noteOff() {
+  state.gateOn = false;
+  if (state.envPhase !== 'idle') state.envPhase = 'release';
+  state.activeNote = null;
+  render();
+}
+
+// ─── Scope rendering ────────────────────────────────────────────
+let scopeCanvas, scopeCtx, specCanvas, specCtx;
+let drawRAF;
+
+function startDraw() {
+  if (drawRAF) return;
+  function draw() {
+    drawScope();
+    drawSpectrum();
+    drawEnvViz();
+    drawRAF = requestAnimationFrame(draw);
+  }
+  drawRAF = requestAnimationFrame(draw);
+}
+
+function drawScope() {
+  if (!scopeCanvas || !analyser) return;
+  const c = scopeCtx;
+  const w = scopeCanvas.width, h = scopeCanvas.height;
+  const bufLen = analyser.fftSize;
+  const data = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(data);
+
+  c.fillStyle = '#0a0a12';
+  c.fillRect(0, 0, w, h);
+
+  // Grid
+  c.strokeStyle = '#1a1a28';
+  c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(0, h/2); c.lineTo(w, h/2);
+  for (let i = 1; i < 4; i++) { c.moveTo(w*i/4, 0); c.lineTo(w*i/4, h); }
+  c.stroke();
+
+  // Waveform
+  c.strokeStyle = '#22d3ee';
+  c.lineWidth = 2;
+  c.beginPath();
+  const slice = w / bufLen;
+  for (let i = 0; i < bufLen; i++) {
+    const x = i * slice;
+    const y = (data[i] / 128.0) * (h / 2);
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  }
+  c.stroke();
+
+  // Glow
+  c.strokeStyle = '#22d3ee40';
+  c.lineWidth = 6;
+  c.beginPath();
+  for (let i = 0; i < bufLen; i++) {
+    const x = i * slice;
+    const y = (data[i] / 128.0) * (h / 2);
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  }
+  c.stroke();
+}
+
+function drawSpectrum() {
+  if (!specCanvas || !analyser || !state.spectrumOpen) return;
+  const c = specCtx;
+  const w = specCanvas.width, h = specCanvas.height;
+  const bufLen = analyser.frequencyBinCount;
+  const data = new Uint8Array(bufLen);
+  analyser.getByteFrequencyData(data);
+
+  c.fillStyle = '#0a0a12';
+  c.fillRect(0, 0, w, h);
+
+  // Only show first ~quarter (up to ~5kHz)
+  const usable = Math.floor(bufLen * 0.25);
+  const barW = w / usable;
+
+  for (let i = 0; i < usable; i++) {
+    const v = data[i] / 255;
+    const barH = v * h * 0.9;
+    const hue = 180 + v * 40; // cyan to blue-ish
+    c.fillStyle = `hsla(${hue}, 80%, 60%, ${0.4 + v * 0.6})`;
+    c.fillRect(i * barW, h - barH, Math.max(barW - 0.5, 1), barH);
+  }
+}
+
+// Mini envelope viz
+let envCanvas, envCtx;
+function drawEnvViz() {
+  if (!envCanvas || !envCtx) return;
+  const c = envCtx;
+  const w = envCanvas.width, h = envCanvas.height;
+  c.fillStyle = '#0e0e16';
+  c.fillRect(0, 0, w, h);
+
+  if (!state.envOn) {
+    c.fillStyle = '#66667a';
+    c.font = '10px "Source Code Pro"';
+    c.textAlign = 'center';
+    c.fillText('ENVELOPE OFF', w/2, h/2 + 4);
+    return;
+  }
+
+  const s = state;
+  const m = 4;
+  const totalT = s.envA + s.envD + 0.25 + s.envR;
+  const sc = (w - 2*m) / totalT;
+  const yT = m, yB = h - m;
+
+  // Shape
+  const x0 = m;
+  const x1 = m + s.envA * sc;
+  const x2 = x1 + s.envD * sc;
+  const x3 = x2 + 0.25 * sc;
+  const x4 = x3 + s.envR * sc;
+  const yS = yB - s.envS * (yB - yT);
+
+  c.strokeStyle = '#22d3ee50';
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.moveTo(x0, yB); c.lineTo(x1, yT); c.lineTo(x2, yS); c.lineTo(x3, yS); c.lineTo(x4, yB);
+  c.stroke();
+
+  // Level indicator
+  const ly = yB - s.envLevel * (yB - yT);
+  const colors = { idle:'#66667a', attack:'#34d399', decay:'#f5a623', sustain:'#22d3ee', release:'#f06050' };
+  c.fillStyle = colors[s.envPhase] || '#66667a';
+  c.beginPath();
+  c.arc(m + 2, ly, 3, 0, Math.PI * 2);
+  c.fill();
+}
+
+// ─── UI Rendering ───────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  const s = state;
+
+  app.innerHTML = `
+    <!-- Signal flow -->
+    <div class="signal-flow">
+      <div class="node on">OSC</div><span class="arrow">→</span>
+      <div class="node ${s.filterOn?'on':''}">FILTER</div><span class="arrow">→</span>
+      <div class="node ${s.envOn?'on':''}">ENV</div><span class="arrow">→</span>
+      <div class="node ${s.delayOn?'on':''}">DELAY</div><span class="arrow">→</span>
+      <div class="node on">OUT</div>
+      ${s.lfoOn?`<span class="arrow" style="margin-left:8px">↻</span><div class="node" style="border-color:var(--purple);color:var(--purple)">LFO→${s.lfoTarget}</div>`:''}
+    </div>
+
+    <!-- Oscilloscope -->
+    <div class="scope-wrap">
+      <div class="scope-head" onclick="state.scopeOpen=!state.scopeOpen;render();">
+        <span class="module-title" style="color:var(--cyan)">OSCILLOSCOPE</span>
+        <span style="font-size:0.6rem;color:var(--text-3)">${s.scopeOpen?'▼':'▶'}</span>
+      </div>
+      ${s.scopeOpen?'<canvas id="scopeCanvas" height="140"></canvas>':''}
+    </div>
+
+    <!-- Spectrum -->
+    <div class="scope-wrap">
+      <div class="scope-head" onclick="state.spectrumOpen=!state.spectrumOpen;render();">
+        <span class="module-title" style="color:var(--purple)">FREQUENCY SPECTRUM</span>
+        <span style="font-size:0.6rem;color:var(--text-3)">${s.spectrumOpen?'▼':'▶'}</span>
+      </div>
+      ${s.spectrumOpen?'<canvas id="specCanvas" height="90"></canvas>':''}
+    </div>
+
+    <!-- OSC Module -->
+    <div class="module">
+      <div class="module-head" onclick="toggleModule('osc')">
+        <span class="module-title" style="color:var(--cyan)">OSCILLATOR</span>
+        <span style="font-size:0.6rem;color:var(--text-3)">always on</span>
+      </div>
+      <div class="module-body" id="mod-osc">
+        <div>
+          <div class="knob-label">Waveform</div>
+          <div class="wave-sel">
+            ${['sine','sawtooth','square','triangle'].map(w=>`<button class="${s.oscWave===w?'active':''}" onclick="setOscWave('${w}')">${w==='sawtooth'?'Saw':w.charAt(0).toUpperCase()+w.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Detune</span>
+          <input type="range" class="knob-input" min="-100" max="100" value="${s.oscDetune}" oninput="setDetune(this.value)"/>
+          <span class="knob-value">${s.oscDetune}¢</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Module -->
+    <div class="module">
+      <div class="module-head" onclick="toggleFilter()">
+        <span class="module-title" style="color:var(--amber)">FILTER</span>
+        <div class="module-toggle ${s.filterOn?'on':''}" onclick="event.stopPropagation();toggleFilter()"></div>
+      </div>
+      <div class="module-body ${s.filterOn?'':'collapsed'}">
+        <div class="knob-group">
+          <span class="knob-label">Cutoff</span>
+          <input type="range" class="knob-input" min="40" max="16000" value="${s.filterCutoff}" oninput="setFilterCutoff(this.value)"/>
+          <span class="knob-value">${s.filterCutoff>=1000?(s.filterCutoff/1000).toFixed(1)+'k':s.filterCutoff} Hz</span>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Resonance</span>
+          <input type="range" class="knob-input" min="0" max="25" step="0.5" value="${s.filterRes}" oninput="setFilterRes(this.value)"/>
+          <span class="knob-value">${Number(s.filterRes).toFixed(1)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Envelope Module -->
+    <div class="module">
+      <div class="module-head" onclick="toggleEnv()">
+        <span class="module-title" style="color:var(--green)">ENVELOPE</span>
+        <div class="module-toggle ${s.envOn?'on':''}" onclick="event.stopPropagation();toggleEnv()"></div>
+      </div>
+      <div class="module-body ${s.envOn?'':'collapsed'}" style="flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="knob-group">
+            <span class="knob-label">Attack</span>
+            <input type="range" class="knob-input" min="0.005" max="2" step="0.005" value="${s.envA}" oninput="state.envA=parseFloat(this.value);render()"/>
+            <span class="knob-value">${s.envA<0.1?Math.round(s.envA*1000)+'ms':s.envA.toFixed(2)+'s'}</span>
+          </div>
+          <div class="knob-group">
+            <span class="knob-label">Decay</span>
+            <input type="range" class="knob-input" min="0.005" max="2" step="0.005" value="${s.envD}" oninput="state.envD=parseFloat(this.value);render()"/>
+            <span class="knob-value">${s.envD<0.1?Math.round(s.envD*1000)+'ms':s.envD.toFixed(2)+'s'}</span>
+          </div>
+          <div class="knob-group">
+            <span class="knob-label">Sustain</span>
+            <input type="range" class="knob-input" min="0" max="1" step="0.01" value="${s.envS}" oninput="state.envS=parseFloat(this.value);render()"/>
+            <span class="knob-value">${Math.round(s.envS*100)}%</span>
+          </div>
+          <div class="knob-group">
+            <span class="knob-label">Release</span>
+            <input type="range" class="knob-input" min="0.005" max="3" step="0.005" value="${s.envR}" oninput="state.envR=parseFloat(this.value);render()"/>
+            <span class="knob-value">${s.envR<0.1?Math.round(s.envR*1000)+'ms':s.envR.toFixed(2)+'s'}</span>
+          </div>
+        </div>
+        <canvas id="envCanvas" height="48" class="env-viz"></canvas>
+      </div>
+    </div>
+
+    <!-- LFO Module -->
+    <div class="module">
+      <div class="module-head" onclick="toggleLfo()">
+        <span class="module-title" style="color:var(--purple)">LFO</span>
+        <div class="module-toggle ${s.lfoOn?'on':''}" onclick="event.stopPropagation();toggleLfo()"></div>
+      </div>
+      <div class="module-body ${s.lfoOn?'':'collapsed'}">
+        <div>
+          <div class="knob-label">Wave</div>
+          <div class="wave-sel">
+            ${['triangle','sawtooth','square'].map(w=>`<button class="${s.lfoWave===w?'active':''}" onclick="setLfoWave('${w}')">${w==='sawtooth'?'Saw':w.charAt(0).toUpperCase()+w.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="knob-label">Target</div>
+          <div class="wave-sel target-sel">
+            ${['pitch','filter'].map(t=>`<button class="${s.lfoTarget===t?'active':''}" onclick="setLfoTarget('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Rate</span>
+          <input type="range" class="knob-input" min="0.1" max="20" step="0.1" value="${s.lfoRate}" oninput="setLfoRate(this.value)"/>
+          <span class="knob-value">${Number(s.lfoRate).toFixed(1)} Hz</span>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Depth</span>
+          <input type="range" class="knob-input" min="0" max="100" step="1" value="${s.lfoDepth}" oninput="setLfoDepth(this.value)"/>
+          <span class="knob-value">${s.lfoDepth}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delay Module -->
+    <div class="module">
+      <div class="module-head" onclick="toggleDelay()">
+        <span class="module-title" style="color:var(--red)">DELAY</span>
+        <div class="module-toggle ${s.delayOn?'on':''}" onclick="event.stopPropagation();toggleDelay()"></div>
+      </div>
+      <div class="module-body ${s.delayOn?'':'collapsed'}">
+        <div class="knob-group">
+          <span class="knob-label">Time</span>
+          <input type="range" class="knob-input" min="0.02" max="1.5" step="0.01" value="${s.delayTime}" oninput="setDelayTime(this.value)"/>
+          <span class="knob-value">${(s.delayTime*1000).toFixed(0)}ms</span>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Feedback</span>
+          <input type="range" class="knob-input" min="0" max="0.9" step="0.01" value="${s.delayFB}" oninput="setDelayFB(this.value)"/>
+          <span class="knob-value">${Math.round(s.delayFB*100)}%</span>
+        </div>
+        <div class="knob-group">
+          <span class="knob-label">Mix</span>
+          <input type="range" class="knob-input" min="0" max="1" step="0.01" value="${s.delayMix}" oninput="setDelayMix(this.value)"/>
+          <span class="knob-value">${Math.round(s.delayMix*100)}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard-wrap">
+      <div class="octave-ctrl">
+        <button onclick="state.octave=Math.max(1,state.octave-1);render()">◀</button>
+        <span>Octave ${s.octave}</span>
+        <button onclick="state.octave=Math.min(7,state.octave+1);render()">▶</button>
+      </div>
+      <div class="keyboard-row" id="keyboard">
+        ${buildKeyboard()}
+      </div>
+      <div class="qwerty-hint">QWERTY: A W S E D F T G Y H U J = C C# D D# E F F# G G# A A# B</div>
+    </div>
+  `;
+
+  // Re-acquire canvases
+  const sc = document.getElementById('scopeCanvas');
+  if (sc) { scopeCanvas = sc; sc.width = sc.offsetWidth * 2; sc.height = 280; scopeCtx = sc.getContext('2d'); }
+  const sp = document.getElementById('specCanvas');
+  if (sp) { specCanvas = sp; sp.width = sp.offsetWidth * 2; sp.height = 180; specCtx = sp.getContext('2d'); }
+  const ev = document.getElementById('envCanvas');
+  if (ev) { envCanvas = ev; ev.width = ev.offsetWidth * 2; ev.height = 96; envCtx = ev.getContext('2d'); }
+
+  attachKeyboardEvents();
+  startDraw();
+}
+
+function buildKeyboard() {
+  const whites = ['C','D','E','F','G','A','B'];
+  const blacks = [{note:'C#',pos:1},{note:'D#',pos:2},{note:'F#',pos:4},{note:'G#',pos:5},{note:'A#',pos:6}];
+  let html = '';
+  whites.forEach((n,i) => {
+    const isActive = state.activeNote === n;
+    html += `<div class="key-white ${isActive?'active':''}" data-note="${n}"><span class="key-label">${n}</span></div>`;
+  });
+  blacks.forEach(b => {
+    const isActive = state.activeNote === b.note;
+    const left = (b.pos / 7 * 100) - 4;
+    html += `<div class="key-black ${isActive?'active':''}" data-note="${b.note}" style="left:${left}%"></div>`;
+  });
+  return html;
+}
+
+function attachKeyboardEvents() {
+  const kb = document.getElementById('keyboard');
+  if (!kb) return;
+  const keys = kb.querySelectorAll('.key-white, .key-black');
+
+  keys.forEach(key => {
+    const handler = (e) => {
+      e.preventDefault();
+      const note = key.dataset.note;
+      noteOn(note);
+    };
+    key.addEventListener('mousedown', handler);
+    key.addEventListener('touchstart', handler, { passive: false });
+  });
+
+  const upHandler = () => { if (state.gateOn) noteOff(); };
+  document.addEventListener('mouseup', upHandler);
+  document.addEventListener('touchend', upHandler);
+  document.addEventListener('touchcancel', upHandler);
+}
+
+// ─── Parameter setters ──────────────────────────────────────────
+function setOscWave(w) { state.oscWave = w; if (osc) osc.type = w; render(); }
+function setDetune(v) { state.oscDetune = Number(v); if (osc) osc.detune.value = Number(v); render(); }
+function toggleFilter() { state.filterOn = !state.filterOn; if (filterNode) filterNode.frequency.value = state.filterOn ? state.filterCutoff : 20000; render(); }
+function setFilterCutoff(v) { state.filterCutoff = Number(v); if (filterNode && state.filterOn) filterNode.frequency.value = Number(v); render(); }
+function setFilterRes(v) { state.filterRes = Number(v); if (filterNode) filterNode.Q.value = Number(v); render(); }
+function toggleEnv() { state.envOn = !state.envOn; render(); }
+function toggleLfo() { state.lfoOn = !state.lfoOn; applyLfoRouting(); render(); }
+function setLfoWave(w) { state.lfoWave = w; if (lfoOsc) lfoOsc.type = w; render(); }
+function setLfoTarget(t) { state.lfoTarget = t; applyLfoRouting(); render(); }
+function setLfoRate(v) { state.lfoRate = Number(v); if (lfoOsc) lfoOsc.frequency.value = Number(v); render(); }
+function setLfoDepth(v) { state.lfoDepth = Number(v); applyLfoRouting(); render(); }
+function toggleDelay() { state.delayOn = !state.delayOn; if (delayWet) delayWet.gain.value = state.delayOn ? state.delayMix : 0; render(); }
+function setDelayTime(v) { state.delayTime = Number(v); if (delayNode) delayNode.delayTime.value = Number(v); render(); }
+function setDelayFB(v) { state.delayFB = Number(v); if (delayFeedback) delayFeedback.gain.value = Number(v); render(); }
+function setDelayMix(v) { state.delayMix = Number(v); if (delayWet && state.delayOn) delayWet.gain.value = Number(v); render(); }
+
+// Master volume
+document.getElementById('masterVol').addEventListener('input', function() {
+  state.masterVol = this.value / 100;
+  if (masterGain) masterGain.gain.value = state.masterVol;
+});
+
+// ─── QWERTY keyboard ───────────────────────────────────────────
+const QWERTY_MAP = { 'a':'C','w':'C#','s':'D','e':'D#','d':'E','f':'F','t':'F#','g':'G','y':'G#','h':'A','u':'A#','j':'B' };
+const activeQwerty = new Set();
+
+document.addEventListener('keydown', (e) => {
+  if (e.repeat || e.metaKey || e.ctrlKey) return;
+  const note = QWERTY_MAP[e.key.toLowerCase()];
+  if (note && !activeQwerty.has(e.key.toLowerCase())) {
+    activeQwerty.add(e.key.toLowerCase());
+    noteOn(note);
+  }
+  if (e.key === 'z') { state.octave = Math.max(1, state.octave - 1); render(); }
+  if (e.key === 'x') { state.octave = Math.min(7, state.octave + 1); render(); }
+});
+
+document.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (QWERTY_MAP[k] && activeQwerty.has(k)) {
+    activeQwerty.delete(k);
+    if (activeQwerty.size === 0) noteOff();
+  }
+});
+
+// ─── Init ───────────────────────────────────────────────────────
+render();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
