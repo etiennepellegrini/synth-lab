@@ -1,18 +1,48 @@
 {
-  "name": "Synth Lab — Interactive Synthesizer",
+  "name": "Synth Lab — Interactive Synthesizer & Course",
   "short_name": "Synth Lab",
-  "description": "An interactive synthesizer simulator for learning synthesis fundamentals",
-  "start_url": "./synth.html",
+  "description": "Learn synthesis fundamentals with interactive audio visualizations and a playable web synthesizer. Built for the Korg Volca Keys.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#08080d",
   "theme_color": "#08080d",
+  "categories": ["education", "music", "entertainment"],
   "icons": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2308080d'/><text x='50' y='62' font-size='50' text-anchor='middle' fill='%23f5a623'>♪</text></svg>",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Synthesizer",
+      "short_name": "Synth",
+      "description": "Open the web synthesizer",
+      "url": "./synth.html?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='70' font-size='60' text-anchor='middle'>🎹</text></svg>",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Course",
+      "short_name": "Learn",
+      "description": "Open the interactive course",
+      "url": "./course.html?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='70' font-size='60' text-anchor='middle'>📚</text></svg>",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ]
 }

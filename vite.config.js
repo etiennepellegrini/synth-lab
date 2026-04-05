@@ -17,11 +17,12 @@ export default defineConfig(({ command }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/*.png', 'fonts/*.woff2'],
-      manifest: false,  // Use public/manifest.json
+      includeAssets: ['manifest.json', 'fonts/*.woff2'],
+      manifest: false, // Use public/manifest.json directly
       workbox: {
-        globPatterns: ['**/*.{js,css,html,woff2,png}'],
+        globPatterns: ['**/*.{js,css,html,woff2}'],
         runtimeCaching: [
+          // Cache Google Fonts API responses
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -29,11 +30,25 @@ export default defineConfig(({ command }) => ({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365  // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          },
+          // Cache Google Fonts stylesheets
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               }
             }
           }
-        ]
+        ],
+        // Clean up old caches
+        cleanupOutdatedCaches: true
       }
     })
   ],

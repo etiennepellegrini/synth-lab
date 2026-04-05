@@ -1,72 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synth Lab — Home</title>
-  <link rel="stylesheet" href="./styles/fonts.css" />
-  <link rel="stylesheet" href="./styles/tokens.css" />
-  <style>
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synth Lab — Interactive Synthesizer & Course</title>
+    <meta name="description" content="Learn synthesis fundamentals with hands-on demos and a playable synthesizer. An interactive course for the Korg Volca Keys." />
+    <meta name="theme-color" content="#08080d" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <style>
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
 
-    .container {
-      max-width: 600px;
-      text-align: center;
-    }
+      .hero-title {
+        font-family: var(--font-mono);
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, var(--text), var(--amber));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
 
-    h1 {
-      font-family: var(--font-mono);
-      font-size: 2rem;
-      color: var(--amber);
-      margin-bottom: 1rem;
-    }
+      .hero-subtitle {
+        font-family: var(--font-body);
+        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        color: var(--text-2);
+        max-width: 600px;
+        margin: 0 auto 48px;
+        line-height: 1.6;
+      }
 
-    p {
-      color: var(--text-2);
-      margin-bottom: 2rem;
-    }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+        gap: 24px;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+      }
 
-    .links {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
 
-    a {
-      display: inline-block;
-      padding: 1rem 2rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      text-decoration: none;
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-      transition: all var(--transition-normal);
-    }
+      .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--amber), transparent);
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
 
-    a:hover {
-      border-color: var(--cyan);
-      background: var(--cyan-dim);
-      color: var(--cyan);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>SYNTH LAB</h1>
-    <p>Interactive synthesizer and synthesis fundamentals course</p>
-    <div class="links">
-      <a href="./synth.html">Synthesizer</a>
-      <a href="./course.html">Course</a>
-    </div>
-  </div>
-</body>
+      .card:hover {
+        border-color: var(--amber);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(245, 166, 35, 0.15);
+      }
+
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+        display: block;
+      }
+
+      .card-title {
+        font-family: var(--font-mono);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 12px;
+      }
+
+      .card-description {
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        color: var(--text-2);
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+
+      .card-cta {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--amber);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .card-cta::after {
+        content: '→';
+        transition: transform 0.25s;
+      }
+
+      .card:hover .card-cta::after {
+        transform: translateX(4px);
+      }
+
+      .footer {
+        margin-top: 64px;
+        padding: 24px;
+        text-align: center;
+        border-top: 1px solid var(--border);
+      }
+
+      .footer-text {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--text-3);
+      }
+
+      .footer-link {
+        color: var(--amber);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      .footer-link:hover {
+        color: var(--text);
+      }
+
+      @media (max-width: 640px) {
+        .cards {
+          grid-template-columns: 1fr;
+          max-width: 400px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="hero">
+      <h1 class="hero-title">Synth Lab</h1>
+      <p class="hero-subtitle">
+        Learn synthesis fundamentals with interactive audio visualizations and a playable web
+        synthesizer. Built for the Korg Volca Keys.
+      </p>
+      <div class="cards">
+        <a href="./synth.html" class="card">
+          <span class="card-icon">🎹</span>
+          <h2 class="card-title">Synthesizer</h2>
+          <p class="card-description">
+            Full-featured web synthesizer with oscillators, filter, envelope, LFO, and delay. Play
+            via touch keyboard or QWERTY keys.
+          </p>
+          <span class="card-cta">Open Synthesizer</span>
+        </a>
+        <a href="./course.html" class="card">
+          <span class="card-icon">📚</span>
+          <h2 class="card-title">Interactive Course</h2>
+          <p class="card-description">
+            7-chapter course covering sound fundamentals, oscillators, filters, envelopes, LFO,
+            signal flow, and sequencing.
+          </p>
+          <span class="card-cta">Start Learning</span>
+        </a>
+      </div>
+      <footer class="footer">
+        <p class="footer-text">
+          Built with Web Audio API, React, and Vite •
+          <a
+            href="https://github.com/anthropics/claude-code"
+            class="footer-link"
+            target="_blank"
+            rel="noopener"
+            >Made with Claude Code</a
+          >
+        </p>
+      </footer>
+    </main>
+  </body>
 </html>
