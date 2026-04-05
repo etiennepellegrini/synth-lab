@@ -45,6 +45,9 @@ function buildKeyboard() {
 // Event Handlers
 // ======================================================================
 
+// Track if mouse is currently pressed on a key
+let mouseDownOnKey = false;
+
 export function initKeyboard() {
   const kb = document.getElementById('keyboard');
   if (!kb) return;
@@ -54,29 +57,46 @@ export function initKeyboard() {
   const keys = kb.querySelectorAll('.key-white, .key-black');
 
   keys.forEach((key) => {
+    // --- Mouse Handling
+
+    const handleMouseDown = (e) => {
+      e.preventDefault();
+      mouseDownOnKey = true;
+      const note = key.dataset.note;
+      noteOn(note, state.octave);
+    };
+
     // --- Touch Handling
 
-    const handleStart = (e) => {
+    const handleTouchStart = (e) => {
       e.preventDefault();
       const note = key.dataset.note;
       noteOn(note, state.octave);
     };
 
-    key.addEventListener('mousedown', handleStart);
-    key.addEventListener('touchstart', handleStart, { passive: false });
+    key.addEventListener('mousedown', handleMouseDown);
+    key.addEventListener('touchstart', handleTouchStart, { passive: false });
   });
 
-  // --- Release Handler
+  // --- Release Handlers
 
-  const handleEnd = () => {
+  const handleMouseUp = () => {
+    // Only trigger noteOff if mouse was pressed on a key
+    if (mouseDownOnKey && state.activeNote) {
+      noteOff();
+      mouseDownOnKey = false;
+    }
+  };
+
+  const handleTouchEnd = () => {
     if (state.activeNote) {
       noteOff();
     }
   };
 
-  document.addEventListener('mouseup', handleEnd);
-  document.addEventListener('touchend', handleEnd);
-  document.addEventListener('touchcancel', handleEnd);
+  document.addEventListener('mouseup', handleMouseUp);
+  document.addEventListener('touchend', handleTouchEnd);
+  document.addEventListener('touchcancel', handleTouchEnd);
 }
 
 // ======================================================================
