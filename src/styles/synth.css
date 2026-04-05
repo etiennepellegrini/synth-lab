@@ -147,6 +147,33 @@
   color: var(--text-2);
 }
 
+/* Make text input knob-values look like spans until focused */
+input[type="text"].knob-value {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  min-width: 40px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s, border-color 0.15s, padding 0.15s;
+}
+
+input[type="text"].knob-value:hover {
+  color: var(--text-1);
+}
+
+input[type="text"].knob-value:focus {
+  background: var(--surface-2);
+  border: 1px solid var(--cyan);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: text;
+  color: var(--text-1);
+}
+
 .knob-input {
   width: 52px;
   -webkit-appearance: none;
