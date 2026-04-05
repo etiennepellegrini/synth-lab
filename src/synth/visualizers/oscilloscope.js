@@ -32,26 +32,35 @@ export function stopOscilloscopeLoop() {
 
 /**
  * Find zero-crossing trigger point for stable waveform display
- * Finds first upward zero crossing - simple and effective
+ * Finds the crossing with the steepest upward slope to ignore filter resonance
  * @param {Uint8Array} data - Time domain data
  * @returns {number} Index of trigger point
  */
 function findTriggerPoint(data) {
   const midpoint = 128;
 
-  // Find first upward zero crossing in first quarter of buffer
-  // (Searching only first quarter leaves plenty of room to display waveform)
+  // Search first quarter of buffer for ALL upward zero crossings
   const searchLimit = Math.floor(data.length * 0.25);
 
-  for (let i = 1; i < searchLimit; i++) {
-    // Upward crossing: previous sample below midpoint, current at or above
+  let bestTrigger = 0;
+  let maxSlope = 0;
+
+  for (let i = 2; i < searchLimit; i++) {
+    // Check for upward zero crossing
     if (data[i - 1] < midpoint && data[i] >= midpoint) {
-      return i;
+      // Calculate slope over multiple samples for stability
+      const slope = data[i + 1] - data[i - 2]; // Look ahead and behind
+
+      // Track the crossing with the steepest slope
+      // (Main waveform has steep slope, resonance wiggles have shallow slope)
+      if (slope > maxSlope) {
+        maxSlope = slope;
+        bestTrigger = i;
+      }
     }
   }
 
-  // No crossing found in first quarter - fallback to start of buffer
-  return 0;
+  return bestTrigger;
 }
 
 /**
