@@ -32,32 +32,26 @@ export function stopOscilloscopeLoop() {
 
 /**
  * Find zero-crossing trigger point for stable waveform display
- * Looks for crossing closest to target position for consistency
+ * Finds first upward zero crossing - simple and effective
  * @param {Uint8Array} data - Time domain data
  * @returns {number} Index of trigger point
  */
 function findTriggerPoint(data) {
   const midpoint = 128;
-  const targetPos = Math.floor(data.length * 0.25); // Target position: 1/4 through buffer
 
-  let bestTrigger = 0;
-  let bestDistance = Infinity;
+  // Find first upward zero crossing in first quarter of buffer
+  // (Searching only first quarter leaves plenty of room to display waveform)
+  const searchLimit = Math.floor(data.length * 0.25);
 
-  // Look for upward zero crossings near target position
-  for (let i = 1; i < data.length / 2; i++) {
-    // Simple upward crossing: previous sample below midpoint, current at or above
+  for (let i = 1; i < searchLimit; i++) {
+    // Upward crossing: previous sample below midpoint, current at or above
     if (data[i - 1] < midpoint && data[i] >= midpoint) {
-      const distance = Math.abs(i - targetPos);
-
-      // Keep the crossing closest to target position
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestTrigger = i;
-      }
+      return i;
     }
   }
 
-  return bestTrigger;
+  // No crossing found in first quarter - fallback to start of buffer
+  return 0;
 }
 
 /**
