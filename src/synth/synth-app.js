@@ -657,6 +657,9 @@ window.toggleScope = toggleScope;
 window.toggleSpectrum = toggleSpectrum;
 window.changeOctave = changeOctave;
 
+// Expose state for visualizers (oscilloscope needs LFO state)
+window.synthState = state;
+
 // Master volume control
 document.addEventListener('DOMContentLoaded', () => {
   const masterVolInput = document.getElementById('masterVol');
