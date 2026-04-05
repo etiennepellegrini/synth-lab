@@ -61,13 +61,19 @@ export function Chapter4() {
   }, [attack, decay, sustain, release]);
 
   const triggerGate = useCallback(
-    (on) => {
+    async (on) => {
       setGateOn(on);
       if (on) {
         envRef.current.phase = 'attack';
         // Start audio
         if (audio.ready && audio.ctx.current && !audioNodesRef.current) {
           const ctx = audio.ctx.current;
+
+          // Resume AudioContext if suspended (Safari)
+          if (ctx.state === 'suspended') {
+            await ctx.resume();
+          }
+
           const osc = ctx.createOscillator();
           const g = ctx.createGain();
           osc.type = 'sawtooth';

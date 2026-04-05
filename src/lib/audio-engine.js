@@ -379,11 +379,14 @@ export class Voice {
   // ─── LFO Routing ───────────────────────────────────────────────
 
   _applyLFORouting() {
-    // Disconnect LFO
+    // Disconnect LFO from all previous targets before reconnecting
+    // NOTE: disconnect() without arguments is intentional - it removes all
+    // connections so we can cleanly route to a new target. Modern browsers
+    // efficiently garbage-collect disconnected nodes.
     try {
       this.lfoGain.disconnect();
     } catch (e) {
-      // Ignore if not connected
+      // Ignore if not connected yet
     }
 
     if (!this._lfoEnabled) {
