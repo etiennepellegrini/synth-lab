@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 
-export default defineConfig({
-  base: '/synth-course/',
+export default defineConfig(({ command }) => ({
+  // Use '/' for dev, '/synth-course/' for production (GitHub Pages)
+  base: command === 'serve' ? '/' : '/synth-course/',
 
   plugins: [
     react(),
@@ -40,4 +41,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));
