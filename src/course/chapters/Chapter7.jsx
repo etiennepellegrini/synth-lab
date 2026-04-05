@@ -47,28 +47,38 @@ export function Chapter7() {
     if (playhead >= 0 && playhead !== prevPlayhead.current && audio.ready && audio.ctx.current) {
       const step = steps[playhead];
       if (step.active) {
-        try {
-          const ctx = audio.ctx.current;
-          const freq = NOTE_FREQS[noteNames[step.note]] || 261.63;
-          const osc = ctx.createOscillator();
-          const filt = ctx.createBiquadFilter();
-          const g = ctx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.value = freq;
-          filt.type = 'lowpass';
-          filt.frequency.value = 2500;
-          filt.Q.value = 1;
-          const dur = Math.min((60 / bpm / 4) * 0.8, 0.3);
-          g.gain.setValueAtTime(0.22, ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-          osc.connect(filt);
-          filt.connect(g);
-          g.connect(audio.master.current);
-          osc.start();
-          osc.stop(ctx.currentTime + dur + 0.02);
-        } catch (e) {
-          // AudioContext may be closed or suspended
-        }
+        const playNote = async () => {
+          try {
+            const ctx = audio.ctx.current;
+
+            // Resume AudioContext if suspended (Safari)
+            if (ctx.state === 'suspended') {
+              await ctx.resume();
+            }
+
+            const freq = NOTE_FREQS[noteNames[step.note]] || 261.63;
+            const osc = ctx.createOscillator();
+            const filt = ctx.createBiquadFilter();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            filt.type = 'lowpass';
+            filt.frequency.value = 2500;
+            filt.Q.value = 1;
+            const dur = Math.min((60 / bpm / 4) * 0.8, 0.3);
+            g.gain.setValueAtTime(0.22, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+            osc.connect(filt);
+            filt.connect(g);
+            g.connect(audio.master.current);
+            osc.start();
+            osc.stop(ctx.currentTime + dur + 0.02);
+          } catch (e) {
+            // AudioContext may be closed or suspended
+          }
+        };
+
+        playNote();
       }
     }
     prevPlayhead.current = playhead;

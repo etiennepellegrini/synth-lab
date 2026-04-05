@@ -37,16 +37,26 @@ export function Chapter1() {
   useEffect(() => {
     if (listening && audio.ready && audio.ctx.current) {
       const ctx = audio.ctx.current;
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 220 * freq; // map visual freq to audible range
-      g.gain.value = amp * 0.3;
-      osc.connect(g);
-      g.connect(audio.master.current);
-      osc.start();
-      oscRef.current = osc;
-      gainRef.current = g;
+
+      // Resume AudioContext if suspended (Safari)
+      const initAudio = async () => {
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 220 * freq; // map visual freq to audible range
+        g.gain.value = amp * 0.3;
+        osc.connect(g);
+        g.connect(audio.master.current);
+        osc.start();
+        oscRef.current = osc;
+        gainRef.current = g;
+      };
+
+      initAudio();
       return () => {
         try {
           g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);

@@ -31,44 +31,54 @@ export function Chapter5() {
   useEffect(() => {
     if (listening && audio.ready && audio.ctx.current) {
       const ctx = audio.ctx.current;
-      const osc = ctx.createOscillator();
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
-      const filt = ctx.createBiquadFilter();
-      const g = ctx.createGain();
 
-      osc.type = 'sawtooth';
-      osc.frequency.value = 220;
-      filt.type = 'lowpass';
-      filt.frequency.value = 3000;
-      filt.Q.value = 2;
-      g.gain.value = 0.22;
+      // Resume AudioContext if suspended (Safari)
+      const initAudio = async () => {
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
 
-      const waveMap = { triangle: 'triangle', saw: 'sawtooth', square: 'square' };
-      lfo.type = waveMap[lfoWave] || 'triangle';
-      lfo.frequency.value = lfoRate;
+        const osc = ctx.createOscillator();
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        const g = ctx.createGain();
 
-      if (target === 'pitch') {
-        lfoGain.gain.value = 30; // ±30 Hz pitch wobble
-        lfo.connect(lfoGain);
-        lfoGain.connect(osc.frequency);
-      } else if (target === 'filter') {
-        lfoGain.gain.value = 2000;
-        lfo.connect(lfoGain);
-        lfoGain.connect(filt.frequency);
-      } else {
-        // amplitude
-        lfoGain.gain.value = 0.1;
-        lfo.connect(lfoGain);
-        lfoGain.connect(g.gain);
-      }
+        osc.type = 'sawtooth';
+        osc.frequency.value = 220;
+        filt.type = 'lowpass';
+        filt.frequency.value = 3000;
+        filt.Q.value = 2;
+        g.gain.value = 0.22;
 
-      osc.connect(filt);
-      filt.connect(g);
-      g.connect(audio.master.current);
-      osc.start();
-      lfo.start();
-      nodesRef.current = { osc, lfo, lfoGain, filt, g };
+        const waveMap = { triangle: 'triangle', saw: 'sawtooth', square: 'square' };
+        lfo.type = waveMap[lfoWave] || 'triangle';
+        lfo.frequency.value = lfoRate;
+
+        if (target === 'pitch') {
+          lfoGain.gain.value = 30; // ±30 Hz pitch wobble
+          lfo.connect(lfoGain);
+          lfoGain.connect(osc.frequency);
+        } else if (target === 'filter') {
+          lfoGain.gain.value = 2000;
+          lfo.connect(lfoGain);
+          lfoGain.connect(filt.frequency);
+        } else {
+          // amplitude
+          lfoGain.gain.value = 0.1;
+          lfo.connect(lfoGain);
+          lfoGain.connect(g.gain);
+        }
+
+        osc.connect(filt);
+        filt.connect(g);
+        g.connect(audio.master.current);
+        osc.start();
+        lfo.start();
+        nodesRef.current = { osc, lfo, lfoGain, filt, g };
+      };
+
+      initAudio();
       return () => {
         try {
           g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);

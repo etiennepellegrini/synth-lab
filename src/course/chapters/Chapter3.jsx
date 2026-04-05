@@ -22,22 +22,32 @@ export function Chapter3() {
   useEffect(() => {
     if (listening && audio.ready && audio.ctx.current) {
       const ctx = audio.ctx.current;
-      const osc = ctx.createOscillator();
-      const filt = ctx.createBiquadFilter();
-      const g = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.value = 110;
-      filt.type = 'lowpass';
-      filt.frequency.value = cutoff;
-      filt.Q.value = resonance * 25;
-      g.gain.value = 0.25;
-      osc.connect(filt);
-      filt.connect(g);
-      g.connect(audio.master.current);
-      osc.start();
-      oscRef.current = osc;
-      filterRef.current = filt;
-      gainRef.current = g;
+
+      // Resume AudioContext if suspended (Safari)
+      const initAudio = async () => {
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+
+        const osc = ctx.createOscillator();
+        const filt = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 110;
+        filt.type = 'lowpass';
+        filt.frequency.value = cutoff;
+        filt.Q.value = resonance * 25;
+        g.gain.value = 0.25;
+        osc.connect(filt);
+        filt.connect(g);
+        g.connect(audio.master.current);
+        osc.start();
+        oscRef.current = osc;
+        filterRef.current = filt;
+        gainRef.current = g;
+      };
+
+      initAudio();
       return () => {
         try {
           g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
