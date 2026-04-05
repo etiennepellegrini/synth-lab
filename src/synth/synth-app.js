@@ -68,6 +68,10 @@ let voice = null;
 // ======================================================================
 
 export async function initAudio() {
+  if (audioEngine.ready && voice) {
+    return; // Already initialized
+  }
+
   if (!audioEngine.ready) {
     await audioEngine.init();
   }
@@ -104,9 +108,10 @@ export async function initAudio() {
 // Note Control (called by keyboard module)
 // ======================================================================
 
-export function noteOn(note, octave) {
-  if (!audioEngine.ready) {
-    initAudio();
+export async function noteOn(note, octave) {
+  // Ensure audio is initialized before playing
+  if (!audioEngine.ready || !voice) {
+    await initAudio();
   }
 
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -116,7 +121,7 @@ export function noteOn(note, octave) {
 
   voice.noteOn(freq);
   state.activeNote = note;
-  render();
+  updateKeyboardVisuals();
 }
 
 export function noteOff() {
@@ -124,7 +129,29 @@ export function noteOff() {
     voice.noteOff();
   }
   state.activeNote = null;
-  render();
+  updateKeyboardVisuals();
+}
+
+// Update only keyboard visual state without full re-render
+function updateKeyboardVisuals() {
+  const kb = document.getElementById('keyboard');
+  if (!kb) return;
+
+  const keys = kb.querySelectorAll('.key-white, .key-black');
+  keys.forEach((key) => {
+    const note = key.dataset.note;
+    if (note === state.activeNote) {
+      key.classList.add('active');
+    } else {
+      key.classList.remove('active');
+    }
+  });
+}
+
+// Update individual value displays without full re-render
+function updateValueDisplay(selector, value) {
+  const el = document.querySelector(selector);
+  if (el) el.textContent = value;
 }
 
 // ======================================================================
@@ -136,13 +163,20 @@ export function noteOff() {
 export function setOscWave(type) {
   state.oscWave = type;
   if (voice) voice.setWaveform(type);
-  render();
+  // Update button active states
+  document.querySelectorAll('.wave-sel button').forEach((btn) => {
+    const btnText = btn.textContent.toLowerCase();
+    const waveText = type === 'sawtooth' ? 'saw' : type;
+    btn.classList.toggle('active', btnText === waveText);
+  });
 }
 
 export function setDetune(value) {
   state.oscDetune = Number(value);
   if (voice) voice.setDetune(Number(value));
-  render();
+  // Update value display only (find the detune value span)
+  const detuneSpan = document.querySelector('.knob-group:has(input[min="-100"]) .knob-value');
+  if (detuneSpan) detuneSpan.textContent = `${state.oscDetune}¢`;
 }
 
 export function toggleOscModule() {
@@ -161,13 +195,17 @@ export function toggleFilter() {
 export function setFilterCutoff(value) {
   state.filterCutoff = Number(value);
   if (voice) voice.setFilterCutoff(Number(value));
-  render();
+  // Update display
+  const cutoffSpan = document.querySelector('.knob-group:has(input[max="16000"]) .knob-value');
+  if (cutoffSpan) cutoffSpan.textContent = formatFreq(state.filterCutoff);
 }
 
 export function setFilterRes(value) {
   state.filterRes = Number(value);
   if (voice) voice.setFilterResonance(Number(value));
-  render();
+  // Update display
+  const resSpan = document.querySelector('.knob-group:has(input[max="25"]) .knob-value');
+  if (resSpan) resSpan.textContent = Number(state.filterRes).toFixed(1);
 }
 
 export function toggleFilterModule() {
@@ -186,25 +224,57 @@ export function toggleEnv() {
 export function setEnvAttack(value) {
   state.envA = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Attack') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = formatTime(state.envA);
+    }
+  });
 }
 
 export function setEnvDecay(value) {
   state.envD = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Decay') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = formatTime(state.envD);
+    }
+  });
 }
 
 export function setEnvSustain(value) {
   state.envS = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Sustain') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${Math.round(state.envS * 100)}%`;
+    }
+  });
 }
 
 export function setEnvRelease(value) {
   state.envR = parseFloat(value);
   if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Release') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = formatTime(state.envR);
+    }
+  });
 }
 
 export function toggleEnvModule() {
@@ -229,13 +299,29 @@ export function setLfoWave(type) {
 export function setLfoRate(value) {
   state.lfoRate = parseFloat(value);
   if (voice) voice.setLFORate(parseFloat(value));
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Rate') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${Number(state.lfoRate).toFixed(1)} Hz`;
+    }
+  });
 }
 
 export function setLfoDepth(value) {
   state.lfoDepth = parseFloat(value);
   if (voice) voice.setLFODepth(parseFloat(value));
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Depth') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${state.lfoDepth}`;
+    }
+  });
 }
 
 export function setLfoTarget(target) {
@@ -260,19 +346,43 @@ export function toggleDelay() {
 export function setDelayTime(value) {
   state.delayTime = parseFloat(value);
   if (voice) voice.setDelayTime(parseFloat(value));
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Time') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${(state.delayTime * 1000).toFixed(0)}ms`;
+    }
+  });
 }
 
 export function setDelayFB(value) {
   state.delayFB = parseFloat(value);
   if (voice) voice.setDelayFeedback(parseFloat(value));
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Feedback') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${Math.round(state.delayFB * 100)}%`;
+    }
+  });
 }
 
 export function setDelayMix(value) {
   state.delayMix = parseFloat(value);
   if (voice) voice.setDelayMix(parseFloat(value));
-  render();
+  // Update display
+  const knobs = document.querySelectorAll('.knob-group');
+  knobs.forEach((knob) => {
+    const label = knob.querySelector('.knob-label');
+    if (label && label.textContent === 'Mix') {
+      const valueSpan = knob.querySelector('.knob-value');
+      if (valueSpan) valueSpan.textContent = `${Math.round(state.delayMix * 100)}%`;
+    }
+  });
 }
 
 export function toggleDelayModule() {

@@ -328,12 +328,11 @@ export class Voice {
 
   _processEnvelope(dt) {
     if (!this._envEnabled) {
-      // No envelope: gate directly controls volume with smooth fade
+      // No envelope: gate directly controls volume (matches original)
       if (this.gateOn) {
         this.envLevel = 1;
       } else {
-        // Smooth exponential-ish fade when gate is off
-        this.envLevel = Math.max(0, this.envLevel - (dt / 0.1) * this.envLevel);
+        this.envLevel = Math.max(0, this.envLevel - dt * 10);
       }
       this.ampGain.gain.value = this.envLevel * 0.35;
       this.envPhase = this.gateOn ? 'sustain' : (this.envLevel > 0.01 ? 'release' : 'idle');
