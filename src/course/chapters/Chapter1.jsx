@@ -48,7 +48,11 @@ export function Chapter1() {
       oscRef.current = osc;
       gainRef.current = g;
       return () => {
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        try {
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        } catch (e) {
+          // AudioContext may be closed or suspended
+        }
         setTimeout(() => {
           try {
             osc.stop();

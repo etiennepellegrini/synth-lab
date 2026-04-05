@@ -48,6 +48,9 @@ function buildKeyboard() {
 // Track if mouse is currently pressed on a key
 let mouseDownOnKey = false;
 
+// Track if document-level listeners have been added (prevent duplicates)
+let documentListenersAdded = false;
+
 export function initKeyboard() {
   const kb = document.getElementById('keyboard');
   if (!kb) return;
@@ -79,24 +82,29 @@ export function initKeyboard() {
   });
 
   // --- Release Handlers
+  // Only register document-level listeners once to prevent memory leak
 
-  const handleMouseUp = () => {
-    // Only trigger noteOff if mouse was pressed on a key
-    if (mouseDownOnKey && state.activeNote) {
-      noteOff();
-      mouseDownOnKey = false;
-    }
-  };
+  if (!documentListenersAdded) {
+    const handleMouseUp = () => {
+      // Only trigger noteOff if mouse was pressed on a key
+      if (mouseDownOnKey && state.activeNote) {
+        noteOff();
+        mouseDownOnKey = false;
+      }
+    };
 
-  const handleTouchEnd = () => {
-    if (state.activeNote) {
-      noteOff();
-    }
-  };
+    const handleTouchEnd = () => {
+      if (state.activeNote) {
+        noteOff();
+      }
+    };
 
-  document.addEventListener('mouseup', handleMouseUp);
-  document.addEventListener('touchend', handleTouchEnd);
-  document.addEventListener('touchcancel', handleTouchEnd);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
+
+    documentListenersAdded = true;
+  }
 }
 
 // ======================================================================

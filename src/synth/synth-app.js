@@ -72,36 +72,43 @@ export async function initAudio() {
     return; // Already initialized
   }
 
-  if (!audioEngine.ready) {
-    await audioEngine.init();
+  try {
+    if (!audioEngine.ready) {
+      await audioEngine.init();
+    }
+
+    if (!voice) {
+      voice = audioEngine.createVoice();
+
+      // Initialize voice with current state
+      voice.setWaveform(state.oscWave);
+      voice.setDetune(state.oscDetune);
+      voice.setFilterEnabled(state.filterOn);
+      voice.setFilterCutoff(state.filterCutoff);
+      voice.setFilterResonance(state.filterRes);
+      voice.setEnvelopeEnabled(state.envOn);
+      voice.setADSR(state.envA, state.envD, state.envS, state.envR);
+      voice.setLFOEnabled(state.lfoOn);
+      voice.setLFOWave(state.lfoWave);
+      voice.setLFORate(state.lfoRate);
+      voice.setLFODepth(state.lfoDepth);
+      voice.setLFOTarget(state.lfoTarget);
+      voice.setDelayEnabled(state.delayOn);
+      voice.setDelayTime(state.delayTime);
+      voice.setDelayFeedback(state.delayFB);
+      voice.setDelayMix(state.delayMix);
+    }
+
+    // Start visualization loops
+    startOscilloscopeLoop();
+
+    audioEngine.setMasterVolume(state.masterVol);
+  } catch (err) {
+    console.error('Failed to initialize audio:', err);
+    // TODO: Show user-friendly error message in UI
+    // Common causes: Safari private mode, permissions denied, browser doesn't support Web Audio API
+    return;
   }
-
-  if (!voice) {
-    voice = audioEngine.createVoice();
-
-    // Initialize voice with current state
-    voice.setWaveform(state.oscWave);
-    voice.setDetune(state.oscDetune);
-    voice.setFilterEnabled(state.filterOn);
-    voice.setFilterCutoff(state.filterCutoff);
-    voice.setFilterResonance(state.filterRes);
-    voice.setEnvelopeEnabled(state.envOn);
-    voice.setADSR(state.envA, state.envD, state.envS, state.envR);
-    voice.setLFOEnabled(state.lfoOn);
-    voice.setLFOWave(state.lfoWave);
-    voice.setLFORate(state.lfoRate);
-    voice.setLFODepth(state.lfoDepth);
-    voice.setLFOTarget(state.lfoTarget);
-    voice.setDelayEnabled(state.delayOn);
-    voice.setDelayTime(state.delayTime);
-    voice.setDelayFeedback(state.delayFB);
-    voice.setDelayMix(state.delayMix);
-  }
-
-  // Start visualization loops
-  startOscilloscopeLoop();
-
-  audioEngine.setMasterVolume(state.masterVol);
 }
 
 // ======================================================================
