@@ -70,7 +70,11 @@ export function Chapter5() {
       lfo.start();
       nodesRef.current = { osc, lfo, lfoGain, filt, g };
       return () => {
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        try {
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        } catch (e) {
+          // AudioContext may be closed or suspended
+        }
         setTimeout(() => {
           try {
             osc.stop();
