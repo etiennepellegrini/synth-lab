@@ -7,6 +7,12 @@ export default defineConfig(({ command }) => ({
   // Use '/' for dev, '/synth-course/' for production (GitHub Pages)
   base: command === 'serve' ? '/' : '/synth-course/',
 
+  // Serve from src/ directory
+  root: 'src',
+
+  // Public assets directory
+  publicDir: '../public',
+
   plugins: [
     react(),
     VitePWA({
@@ -33,6 +39,8 @@ export default defineConfig(({ command }) => ({
   ],
 
   build: {
+    outDir: '../dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/index.html'),
