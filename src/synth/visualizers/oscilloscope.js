@@ -114,7 +114,10 @@ export function renderOscilloscope(now = performance.now()) {
   // --- Draw main waveform (with triggering for stability) ---
 
   const triggerPoint = findTriggerPoint(dataArray);
-  const displaySamples = Math.min(bufferLength - triggerPoint, bufferLength);
+
+  // CRITICAL: Always display same number of samples for consistent horizontal scaling
+  // Display 75% of buffer length starting from trigger point
+  const displaySamples = Math.floor(bufferLength * 0.75);
   const sliceWidth = width / displaySamples;
 
   // Draw waveform
@@ -125,7 +128,7 @@ export function renderOscilloscope(now = performance.now()) {
   let x = 0;
   for (let i = 0; i < displaySamples; i++) {
     const idx = triggerPoint + i;
-    if (idx >= bufferLength) break;
+    if (idx >= bufferLength) break; // Safety check
 
     const v = dataArray[idx] / 128.0;
     const y = (v * height) / 2;
