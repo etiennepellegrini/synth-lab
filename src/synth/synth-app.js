@@ -10,6 +10,36 @@ import { renderEnvelopeViz } from './modules/envelope.js';
 import { initKeyboard } from './keyboard.js';
 
 // ======================================================================
+// Logarithmic Scaling Helpers
+// ======================================================================
+
+/**
+ * Convert linear slider position (0-1) to logarithmic value
+ * @param {number} position - Linear position (0-1)
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} Logarithmic value
+ */
+function logScale(position, min, max) {
+  const minLog = Math.log(min);
+  const maxLog = Math.log(max);
+  return Math.exp(minLog + position * (maxLog - minLog));
+}
+
+/**
+ * Convert logarithmic value to linear slider position (0-1)
+ * @param {number} value - Logarithmic value
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} Linear position (0-1)
+ */
+function invLogScale(value, min, max) {
+  const minLog = Math.log(min);
+  const maxLog = Math.log(max);
+  return (Math.log(value) - minLog) / (maxLog - minLog);
+}
+
+// ======================================================================
 // State Management
 // ======================================================================
 
@@ -20,7 +50,7 @@ export const state = {
 
   // Filter
   filterOn: true,
-  filterCutoff: 8000,
+  filterCutoff: 2000, // Changed from 8000 to be visible in spectrum (which shows up to ~5kHz)
   filterRes: 0,
 
   // Envelope
@@ -33,7 +63,7 @@ export const state = {
   // LFO
   lfoOn: false,
   lfoWave: 'triangle',
-  lfoRate: 4,
+  lfoRate: 1, // Changed from 4 to 1Hz for more visible modulation
   lfoDepth: 30,
   lfoTarget: 'pitch',
 
@@ -215,6 +245,54 @@ export function setFilterRes(value) {
   if (resSpan) resSpan.textContent = Number(state.filterRes).toFixed(1);
 }
 
+// Logarithmic filter cutoff slider
+export function setFilterCutoffLog(position) {
+  const value = logScale(parseFloat(position), 40, 16000);
+  state.filterCutoff = value;
+  if (voice) voice.setFilterCutoff(value);
+  // Update text display
+  const textInput = document.querySelector('.knob-group input[data-raw].knob-value[onblur*="commitFilterCutoff"]');
+  if (textInput) {
+    textInput.value = formatFreq(value);
+    textInput.dataset.raw = value;
+  }
+}
+
+// Commit manual text edit for filter cutoff
+export function commitFilterCutoff(input) {
+  const text = input.value.trim().toLowerCase();
+  let value;
+
+  // Parse various formats: "2k", "2.5kHz", "500", "500 Hz", etc.
+  if (text.includes('k')) {
+    value = parseFloat(text) * 1000;
+  } else {
+    value = parseFloat(text);
+  }
+
+  // Clamp to valid range
+  value = Math.max(40, Math.min(16000, value));
+
+  if (!isNaN(value)) {
+    state.filterCutoff = value;
+    if (voice) voice.setFilterCutoff(value);
+
+    // Update slider position
+    const slider = document.querySelector('.knob-group input[type="range"][data-log="true"][data-min="40"]');
+    if (slider) {
+      slider.value = invLogScale(value, 40, 16000);
+    }
+
+    // Update text display
+    input.value = formatFreq(value);
+    input.dataset.raw = value;
+  } else {
+    // Invalid input - revert to previous value
+    const raw = parseFloat(input.dataset.raw);
+    input.value = formatFreq(raw);
+  }
+}
+
 export function toggleFilterModule() {
   state.filterCollapsed = !state.filterCollapsed;
   render();
@@ -331,6 +409,50 @@ export function setLfoDepth(value) {
   });
 }
 
+// Logarithmic LFO rate slider
+export function setLfoRateLog(position) {
+  const value = logScale(parseFloat(position), 0.1, 20);
+  state.lfoRate = value;
+  if (voice) voice.setLFORate(value);
+  // Update text display
+  const textInput = document.querySelector('.knob-group input[data-raw].knob-value[onblur*="commitLfoRate"]');
+  if (textInput) {
+    textInput.value = `${value.toFixed(1)} Hz`;
+    textInput.dataset.raw = value;
+  }
+}
+
+// Commit manual text edit for LFO rate
+export function commitLfoRate(input) {
+  const text = input.value.trim().toLowerCase();
+  let value;
+
+  // Parse various formats: "1", "0.5 Hz", "2Hz", etc.
+  value = parseFloat(text);
+
+  // Clamp to valid range
+  value = Math.max(0.1, Math.min(20, value));
+
+  if (!isNaN(value)) {
+    state.lfoRate = value;
+    if (voice) voice.setLFORate(value);
+
+    // Update slider position
+    const slider = document.querySelector('.knob-group input[type="range"][data-log="true"][data-min="0.1"]');
+    if (slider) {
+      slider.value = invLogScale(value, 0.1, 20);
+    }
+
+    // Update text display
+    input.value = `${value.toFixed(1)} Hz`;
+    input.dataset.raw = value;
+  } else {
+    // Invalid input - revert to previous value
+    const raw = parseFloat(input.dataset.raw);
+    input.value = `${raw.toFixed(1)} Hz`;
+  }
+}
+
 export function setLfoTarget(target) {
   state.lfoTarget = target;
   if (voice) voice.setLFOTarget(target);
@@ -395,6 +517,163 @@ export function setDelayMix(value) {
 export function toggleDelayModule() {
   state.delayCollapsed = !state.delayCollapsed;
   render();
+}
+
+// ======================================================================
+// Text Input Commit Handlers (for editable value labels)
+// ======================================================================
+
+export function commitDetune(input) {
+  const value = parseInt(input.value);
+  if (!isNaN(value)) {
+    const clamped = Math.max(-100, Math.min(100, value));
+    state.oscDetune = clamped;
+    if (voice) voice.setDetune(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = `${clamped}¢`;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = `${input.dataset.raw}¢`;
+  }
+}
+
+export function commitFilterRes(input) {
+  const value = parseFloat(input.value);
+  if (!isNaN(value)) {
+    const clamped = Math.max(0, Math.min(25, value));
+    state.filterRes = clamped;
+    if (voice) voice.setFilterResonance(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = clamped.toFixed(1);
+    input.dataset.raw = clamped;
+  } else {
+    input.value = Number(input.dataset.raw).toFixed(1);
+  }
+}
+
+export function commitEnvAttack(input) {
+  const text = input.value.trim().toLowerCase();
+  let value = text.includes('ms') ? parseFloat(text) / 1000 : parseFloat(text);
+  if (!isNaN(value)) {
+    const clamped = Math.max(0.005, Math.min(2, value));
+    state.envA = clamped;
+    if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = formatTime(clamped);
+    input.dataset.raw = clamped;
+  } else {
+    input.value = formatTime(parseFloat(input.dataset.raw));
+  }
+}
+
+export function commitEnvDecay(input) {
+  const text = input.value.trim().toLowerCase();
+  let value = text.includes('ms') ? parseFloat(text) / 1000 : parseFloat(text);
+  if (!isNaN(value)) {
+    const clamped = Math.max(0.005, Math.min(2, value));
+    state.envD = clamped;
+    if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = formatTime(clamped);
+    input.dataset.raw = clamped;
+  } else {
+    input.value = formatTime(parseFloat(input.dataset.raw));
+  }
+}
+
+export function commitEnvSustain(input) {
+  const value = parseInt(input.value) / 100;
+  if (!isNaN(value)) {
+    const clamped = Math.max(0, Math.min(1, value));
+    state.envS = clamped;
+    if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = `${Math.round(clamped * 100)}%`;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = `${Math.round(parseFloat(input.dataset.raw) * 100)}%`;
+  }
+}
+
+export function commitEnvRelease(input) {
+  const text = input.value.trim().toLowerCase();
+  let value = text.includes('ms') ? parseFloat(text) / 1000 : parseFloat(text);
+  if (!isNaN(value)) {
+    const clamped = Math.max(0.005, Math.min(3, value));
+    state.envR = clamped;
+    if (voice) voice.setADSR(state.envA, state.envD, state.envS, state.envR);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = formatTime(clamped);
+    input.dataset.raw = clamped;
+  } else {
+    input.value = formatTime(parseFloat(input.dataset.raw));
+  }
+}
+
+export function commitLfoDepth(input) {
+  const value = parseInt(input.value);
+  if (!isNaN(value)) {
+    const clamped = Math.max(0, Math.min(100, value));
+    state.lfoDepth = clamped;
+    if (voice) voice.setLFODepth(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = clamped;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = input.dataset.raw;
+  }
+}
+
+export function commitDelayTime(input) {
+  const value = parseFloat(input.value) / 1000; // Convert ms to seconds
+  if (!isNaN(value)) {
+    const clamped = Math.max(0.02, Math.min(1.5, value));
+    state.delayTime = clamped;
+    if (voice) voice.setDelayTime(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = `${(clamped * 1000).toFixed(0)}ms`;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = `${(parseFloat(input.dataset.raw) * 1000).toFixed(0)}ms`;
+  }
+}
+
+export function commitDelayFB(input) {
+  const value = parseInt(input.value) / 100;
+  if (!isNaN(value)) {
+    const clamped = Math.max(0, Math.min(0.9, value));
+    state.delayFB = clamped;
+    if (voice) voice.setDelayFeedback(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = `${Math.round(clamped * 100)}%`;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = `${Math.round(parseFloat(input.dataset.raw) * 100)}%`;
+  }
+}
+
+export function commitDelayMix(input) {
+  const value = parseInt(input.value) / 100;
+  if (!isNaN(value)) {
+    const clamped = Math.max(0, Math.min(1, value));
+    state.delayMix = clamped;
+    if (voice) voice.setDelayMix(clamped);
+    const slider = input.parentElement.querySelector('input[type="range"]');
+    if (slider) slider.value = clamped;
+    input.value = `${Math.round(clamped * 100)}%`;
+    input.dataset.raw = clamped;
+  } else {
+    input.value = `${Math.round(parseFloat(input.dataset.raw) * 100)}%`;
+  }
 }
 
 // --- Scope/Spectrum
@@ -470,7 +749,7 @@ export function render() {
         <div class="knob-group">
           <span class="knob-label">Detune</span>
           <input type="range" class="knob-input" min="-100" max="100" value="${s.oscDetune}" oninput="window.setDetune(this.value)"/>
-          <span class="knob-value">${s.oscDetune}¢</span>
+          <input type="text" class="knob-value" data-raw="${s.oscDetune}" value="${s.oscDetune}¢" onclick="this.select()" onblur="window.commitDetune(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
       </div>
     </div>
@@ -484,13 +763,13 @@ export function render() {
       <div class="module-body ${s.filterCollapsed || !s.filterOn ? 'collapsed' : ''}">
         <div class="knob-group">
           <span class="knob-label">Cutoff</span>
-          <input type="range" class="knob-input" min="40" max="16000" value="${s.filterCutoff}" oninput="window.setFilterCutoff(this.value)"/>
-          <span class="knob-value">${formatFreq(s.filterCutoff)}</span>
+          <input type="range" class="knob-input" data-log="true" data-min="40" data-max="16000" min="0" max="1" step="0.001" value="${invLogScale(s.filterCutoff, 40, 16000)}" oninput="window.setFilterCutoffLog(this.value)"/>
+          <input type="text" class="knob-value" data-raw="${s.filterCutoff}" value="${formatFreq(s.filterCutoff)}" onclick="this.select()" onblur="window.commitFilterCutoff(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
         <div class="knob-group">
           <span class="knob-label">Resonance</span>
           <input type="range" class="knob-input" min="0" max="25" step="0.5" value="${s.filterRes}" oninput="window.setFilterRes(this.value)"/>
-          <span class="knob-value">${Number(s.filterRes).toFixed(1)}</span>
+          <input type="text" class="knob-value" data-raw="${s.filterRes}" value="${Number(s.filterRes).toFixed(1)}" onclick="this.select()" onblur="window.commitFilterRes(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
       </div>
     </div>
@@ -506,22 +785,22 @@ export function render() {
           <div class="knob-group">
             <span class="knob-label">Attack</span>
             <input type="range" class="knob-input" min="0.005" max="2" step="0.005" value="${s.envA}" oninput="window.setEnvAttack(this.value)"/>
-            <span class="knob-value">${formatTime(s.envA)}</span>
+            <input type="text" class="knob-value" data-raw="${s.envA}" value="${formatTime(s.envA)}" onclick="this.select()" onblur="window.commitEnvAttack(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
           </div>
           <div class="knob-group">
             <span class="knob-label">Decay</span>
             <input type="range" class="knob-input" min="0.005" max="2" step="0.005" value="${s.envD}" oninput="window.setEnvDecay(this.value)"/>
-            <span class="knob-value">${formatTime(s.envD)}</span>
+            <input type="text" class="knob-value" data-raw="${s.envD}" value="${formatTime(s.envD)}" onclick="this.select()" onblur="window.commitEnvDecay(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
           </div>
           <div class="knob-group">
             <span class="knob-label">Sustain</span>
             <input type="range" class="knob-input" min="0" max="1" step="0.01" value="${s.envS}" oninput="window.setEnvSustain(this.value)"/>
-            <span class="knob-value">${Math.round(s.envS * 100)}%</span>
+            <input type="text" class="knob-value" data-raw="${s.envS}" value="${Math.round(s.envS * 100)}%"  onclick="this.select()" onblur="window.commitEnvSustain(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
           </div>
           <div class="knob-group">
             <span class="knob-label">Release</span>
             <input type="range" class="knob-input" min="0.005" max="3" step="0.005" value="${s.envR}" oninput="window.setEnvRelease(this.value)"/>
-            <span class="knob-value">${formatTime(s.envR)}</span>
+            <input type="text" class="knob-value" data-raw="${s.envR}" value="${formatTime(s.envR)}" onclick="this.select()" onblur="window.commitEnvRelease(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
           </div>
         </div>
         <canvas id="envCanvas" height="48" class="env-viz"></canvas>
@@ -549,13 +828,13 @@ export function render() {
         </div>
         <div class="knob-group">
           <span class="knob-label">Rate</span>
-          <input type="range" class="knob-input" min="0.1" max="20" step="0.1" value="${s.lfoRate}" oninput="window.setLfoRate(this.value)"/>
-          <span class="knob-value">${Number(s.lfoRate).toFixed(1)} Hz</span>
+          <input type="range" class="knob-input" data-log="true" data-min="0.1" data-max="20" min="0" max="1" step="0.001" value="${invLogScale(s.lfoRate, 0.1, 20)}" oninput="window.setLfoRateLog(this.value)"/>
+          <input type="text" class="knob-value" data-raw="${s.lfoRate}" value="${Number(s.lfoRate).toFixed(1)} Hz" onclick="this.select()" onblur="window.commitLfoRate(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
         <div class="knob-group">
           <span class="knob-label">Depth</span>
           <input type="range" class="knob-input" min="0" max="100" step="1" value="${s.lfoDepth}" oninput="window.setLfoDepth(this.value)"/>
-          <span class="knob-value">${s.lfoDepth}</span>
+          <input type="text" class="knob-value" data-raw="${s.lfoDepth}" value="${s.lfoDepth}" onclick="this.select()" onblur="window.commitLfoDepth(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
       </div>
     </div>
@@ -570,17 +849,17 @@ export function render() {
         <div class="knob-group">
           <span class="knob-label">Time</span>
           <input type="range" class="knob-input" min="0.02" max="1.5" step="0.01" value="${s.delayTime}" oninput="window.setDelayTime(this.value)"/>
-          <span class="knob-value">${(s.delayTime * 1000).toFixed(0)}ms</span>
+          <input type="text" class="knob-value" data-raw="${s.delayTime}" value="${(s.delayTime * 1000).toFixed(0)}ms" onclick="this.select()" onblur="window.commitDelayTime(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
         <div class="knob-group">
           <span class="knob-label">Feedback</span>
           <input type="range" class="knob-input" min="0" max="0.9" step="0.01" value="${s.delayFB}" oninput="window.setDelayFB(this.value)"/>
-          <span class="knob-value">${Math.round(s.delayFB * 100)}%</span>
+          <input type="text" class="knob-value" data-raw="${s.delayFB}" value="${Math.round(s.delayFB * 100)}%" onclick="this.select()" onblur="window.commitDelayFB(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
         <div class="knob-group">
           <span class="knob-label">Mix</span>
           <input type="range" class="knob-input" min="0" max="1" step="0.01" value="${s.delayMix}" oninput="window.setDelayMix(this.value)"/>
-          <span class="knob-value">${Math.round(s.delayMix * 100)}%</span>
+          <input type="text" class="knob-value" data-raw="${s.delayMix}" value="${Math.round(s.delayMix * 100)}%" onclick="this.select()" onblur="window.commitDelayMix(this)" onkeydown="if(event.key==='Enter') this.blur()"/>
         </div>
       </div>
     </div>
@@ -631,27 +910,41 @@ export function render() {
 // Export functions to window for inline event handlers
 window.setOscWave = setOscWave;
 window.setDetune = setDetune;
+window.commitDetune = commitDetune;
 window.toggleOscModule = toggleOscModule;
 window.toggleFilter = toggleFilter;
 window.setFilterCutoff = setFilterCutoff;
+window.setFilterCutoffLog = setFilterCutoffLog;
+window.commitFilterCutoff = commitFilterCutoff;
 window.setFilterRes = setFilterRes;
+window.commitFilterRes = commitFilterRes;
 window.toggleFilterModule = toggleFilterModule;
 window.toggleEnv = toggleEnv;
 window.setEnvAttack = setEnvAttack;
+window.commitEnvAttack = commitEnvAttack;
 window.setEnvDecay = setEnvDecay;
+window.commitEnvDecay = commitEnvDecay;
 window.setEnvSustain = setEnvSustain;
+window.commitEnvSustain = commitEnvSustain;
 window.setEnvRelease = setEnvRelease;
+window.commitEnvRelease = commitEnvRelease;
 window.toggleEnvModule = toggleEnvModule;
 window.toggleLfo = toggleLfo;
 window.setLfoWave = setLfoWave;
 window.setLfoRate = setLfoRate;
+window.setLfoRateLog = setLfoRateLog;
+window.commitLfoRate = commitLfoRate;
 window.setLfoDepth = setLfoDepth;
+window.commitLfoDepth = commitLfoDepth;
 window.setLfoTarget = setLfoTarget;
 window.toggleLfoModule = toggleLfoModule;
 window.toggleDelay = toggleDelay;
 window.setDelayTime = setDelayTime;
+window.commitDelayTime = commitDelayTime;
 window.setDelayFB = setDelayFB;
+window.commitDelayFB = commitDelayFB;
 window.setDelayMix = setDelayMix;
+window.commitDelayMix = commitDelayMix;
 window.toggleDelayModule = toggleDelayModule;
 window.toggleScope = toggleScope;
 window.toggleSpectrum = toggleSpectrum;
