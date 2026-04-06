@@ -76,6 +76,7 @@ export const state = {
   // Keyboard
   octave: 4,
   activeNote: null,
+  latchMode: false,
 
   // UI
   scopeOpen: true,
@@ -161,12 +162,17 @@ export async function noteOn(note, octave) {
   updateKeyboardVisuals();
 }
 
-export function noteOff() {
-  if (voice) {
-    voice.noteOff();
-  }
+export function noteOff(force = false) {
+  if (state.latchMode && !force) return;
+  if (voice) voice.noteOff();
   state.activeNote = null;
   updateKeyboardVisuals();
+}
+
+export function toggleLatch() {
+  state.latchMode = !state.latchMode;
+  if (!state.latchMode) noteOff(true);
+  render();
 }
 
 // Update only keyboard visual state without full re-render
@@ -903,6 +909,9 @@ export function render() {
         <button onclick="window.changeOctave(-1)">◀</button>
         <span>Octave ${s.octave}</span>
         <button onclick="window.changeOctave(1)">▶</button>
+        <button class="wave-btn ${s.latchMode ? 'active' : ''}" onclick="window.toggleLatch()" style="margin-left: auto; padding: 4px 10px;">
+          ${s.latchMode ? '🔒 LATCHED' : '🔓 LATCH'}
+        </button>
       </div>
       <div class="keyboard-row" id="keyboard"></div>
       <div class="qwerty-hint">QWERTY: A W S E D F T G Y H U J = C C# D D# E F F# G G# A A# B</div>
@@ -982,6 +991,7 @@ window.toggleDelayModule = toggleDelayModule;
 window.toggleScope = toggleScope;
 window.toggleSpectrum = toggleSpectrum;
 window.changeOctave = changeOctave;
+window.toggleLatch = toggleLatch;
 
 // Expose state for visualizers (oscilloscope needs LFO state)
 window.synthState = state;
